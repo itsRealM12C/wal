@@ -25,54 +25,86 @@ input{width:60px;padding:4px;margin-right:6px;border-radius:4px;border:1px solid
 <div id="pcmButtons"></div>
 
 <script>
-let currentVolume=10,isMuted=false;
+let currentVolume=10, isMuted=false;
 
-// --- Send request to SSAP or webOS Luna ---
-function sendReq(uri,payload={}){
-  if(window.webOS && webOS.service){
-    let service,method;
-    if(uri.startsWith('luna://')){
-      const parts=uri.replace('luna://','').split('/');
-      service=parts[0]; method=parts.slice(1).join('/');
-    }else{
-      const parts=uri.replace('ssap://','').split('/');
-      service=parts[0]; method=parts.slice(1).join('/');
-    }
-    webOS.service.request('luna://'+service,{method,payload,
-      onSuccess:()=>console.log('OK '+method),
-      onFailure:e=>console.log('ERR '+JSON.stringify(e))
+// --- Universal SSAP/Luna sender
+async function sendReq(uri,payload={}){
+  const ua=navigator.userAgent;
+  const isC53=ua.includes('Chrome/53');
+  if(isC53 && window.webOS && webOS.service){
+    const [service,method]=uri.replace(/^ssap:\/\//,'').split('/');
+    webOS.service.request('luna://'+service,{
+      method,
+      parameters:payload,
+      onSuccess:()=>log('OK '+method),
+      onFailure:e=>log('ERR '+(e.errorText||JSON.stringify(e)))
     });
-  }else{console.log('REQ',uri,payload);}
+  }else{
+    if(!window.client) window.client=new SSAPClient('127.0.0.1', localStorage['client-key-127.0.0.1']);
+    if(!window.client.isConnected) await window.client.connect();
+    localStorage['client-key-127.0.0.1']=await window.client.register();
+    await window.client.request({uri,payload});
+    log('OK '+uri);
+  }
 }
 
-// --- Volume controls ---
-function volumeUp(){currentVolume++; sendReq('ssap://audio/setVolume',{volume:currentVolume}); console.log('Volume',currentVolume);}
-function volumeDown(){currentVolume--; sendReq('ssap://audio/setVolume',{volume:currentVolume}); console.log('Volume',currentVolume);}
-function setVolume(){
-  let val=parseInt(document.getElementById('volInput').value);
-  if(!isNaN(val)){currentVolume=val; sendReq('ssap://audio/setVolume',{volume:currentVolume}); console.log('Volume set to',currentVolume);}
+// --- Logging helper
+function log(msg){
+  const L=document.getElementById('log');
+  L.textContent='['+new Date().toLocaleTimeString()+'] '+msg+'\n'+L.textContent;
 }
-function toggleMute(){isMuted=!isMuted; sendReq('ssap://audio/setMute',{mute:isMuted}); console.log('Mute',isMuted);}
 
-// --- PCM Sounds ---
+// --- Volume actions
+function setVolume(vol){
+  currentVolume=vol;
+  sendReq('ssap://audio/setVolume',{volume:currentVolume});
+  log('Volume set to '+currentVolume);
+}
+function volumeUp(){setVolume(currentVolume+1);}
+function volumeDown(){setVolume(Math.max(0,currentVolume-1));}
+function toggleMute(){isMuted=!isMuted; sendReq('ssap://audio/setMute',{mute:isMuted}); log('Mute '+isMuted);}
+
+// --- PCM Sounds
 const pcmSounds=[
-  {label:'Power On',name:'power-on'},{label:'Power Off',name:'power-off'},{label:'Welcome',name:'welcome'},
-  {label:'FU Fail',name:'first-use-fail'},{label:'FU Success',name:'first-use-success'},
-  {label:'Input Detected',name:'input-detected'},{label:'Voice Start',name:'voicestart'},
-  {label:'Voice Confirm',name:'voiceconfirm'},{label:'Voice Cancel',name:'voicecancel'},
+  {label:'Power On',name:'power-on'},
+  {label:'Power Off',name:'power-off'},
+  {label:'Welcome',name:'welcome'},
+  {label:'FU Fail',name:'first-use-fail'},
+  {label:'FU Success',name:'first-use-success'},
+  {label:'Input Detected',name:'input-detected'},
+  {label:'Voice Start',name:'voicestart'},
+  {label:'Voice Confirm',name:'voiceconfirm'},
+  {label:'Voice Cancel',name:'voicecancel'},
   {label:'Loading',name:'loading'}
 ];
 
-const pcmContainer=document.getElementById('pcmButtons');
-pcmSounds.forEach(s=>{
-  const b=document.createElement('button');
-  b.className='btn';
-  b.textContent=s.label;
-  b.onclick=()=>sendReq('ssap://com.webos.audio/systemsounds/playFeedback',{
-    play:true,sink:'pfeedback',name:s.name
+document.getElementById('pcmBtn').onclick=()=>{
+  const container=document.getElementById('pcmButtons');
+  container.innerHTML='';
+  pcmSounds.forEach(s=>{
+    const b=document.createElement('button');
+    b.className='btn';
+    b.textContent=s.label;
+    b.onclick=()=>sendReq('ssap://com.webos.audio/systemsounds/playFeedback',{
+      play:true, sink:'pfeedback', name:s.name
+    });
+    container.appendChild(b);
   });
-  pcmContainer.appendChild(b);
-});
+  document.getElementById('pcmDialog').style.display='block';
+};
+
+// --- Volume setter input
+const volInput=document.createElement('input');
+volInput.type='number';
+volInput.style.width='60px';
+volInput.value=currentVolume;
+volInput.oninput=()=>{ currentVolume=parseInt(volInput.value)||0; };
+const setBtn=document.createElement('button');
+setBtn.className='btn';
+setBtn.textContent='Set';
+setBtn.onclick=()=>{ setVolume(currentVolume); };
+document.getElementById('mainUI').appendChild(volInput);
+document.getElementById('mainUI').appendChild(setBtn);
 </script>
 </body>
 </html>
