@@ -37,9 +37,36 @@
   .dialog{display:none;z-index:99;min-width:240px}
   /* log */
   #log{
-    position:absolute;left:12px;bottom:12px;right:12px;height:28vh;max-height:36vh;overflow:auto;background:rgba(255,255,255,.03);
-    padding:10px;border-radius:10px;font-size:12px;color:var(--muted);white-space:pre-wrap;border:1px solid rgba(255,255,255,.03) display:none;
+    // Make log a draggable widget
+const logWidget=document.getElementById('log');
+logWidget.style.position='absolute';
+logWidget.style.top='50px';
+logWidget.style.right='50px';
+logWidget.style.width='300px';
+logWidget.style.height='200px';
+logWidget.style.background='rgba(0,0,0,0.85)';
+logWidget.style.border='2px solid #555';
+logWidget.style.borderRadius='10px';
+logWidget.style.padding='6px';
+logWidget.style.overflow='auto';
+logWidget.style.resize='both';
+logWidget.style.cursor='move';
+logWidget.style.zIndex='100';
+
+// Drag logic
+let isDragging=false, offsetX=0, offsetY=0;
+logWidget.addEventListener('mousedown', e=>{
+  isDragging=true;
+  offsetX=e.clientX-logWidget.getBoundingClientRect().left;
+  offsetY=e.clientY-logWidget.getBoundingClientRect().top;
+});
+document.addEventListener('mousemove', e=>{
+  if(isDragging){
+    logWidget.style.left=(e.clientX-offsetX)+'px';
+    logWidget.style.top=(e.clientY-offsetY)+'px';
   }
+});
+document.addEventListener('mouseup', e=>{isDragging=false;});
   /* header action icons */
   .title .actions{display:flex;gap:6px;align-items:center}
   .icon{width:26px;height:26px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;background:rgba(255,255,255,.02);color:var(--muted);font-weight:700}
