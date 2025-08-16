@@ -1,1065 +1,544 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>LG webOS Launcher</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <style>
-        /* Base Styles */
-        body {
-            background: #0b0b0b;
-            font-family: Arial, sans-serif;
-            color: white;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-        }
-        #app-container {
-            width: 100vw;
-            height: 100vh;
-            overflow: auto;
-            scroll-behavior: smooth;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-        h1 {
-            font-size: 1.2rem;
-            margin: 10px 0 6px;
-            color: #dcdcdc;
-            text-shadow: 0 0 4px #000;
-        }
-        h2 {
-            font-size: 1rem;
-            margin: 8px 0 4px;
-            color: #dcdcdc;
-        }
-        
-        /* Tab Navigation */
-        .tab-container {
-            display: flex;
-            margin-bottom: 10px;
-            border-bottom: 1px solid #333;
-            flex-wrap: wrap;
-        }
-        .tab-btn {
-            padding: 8px 16px;
-            background: #222;
-            border: none;
-            border-bottom: 2px solid transparent;
-            color: #ccc;
-            cursor: pointer;
-            font-size: 0.9rem;
-        }
-        .tab-btn.active {
-            background: #333;
-            border-bottom: 2px solid #4af;
-            color: white;
-        }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        
-        /* Common Button Styles */
-        .btn {
-            display: inline-block;
-            width: 100%;
-            margin: 4px 0;
-            padding: 8px;
-            background: linear-gradient(#303030, #1a1a1a);
-            border: 1px solid #555;
-            border-radius: 8px;
-            color: white;
-            font-size: 0.8rem;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 2px 3px rgba(0,0,0,0.4);
-            outline: none;
-            transition: all 0.2s ease;
-        }
-        .btn:hover, .btn:focus {
-            background: linear-gradient(#444, #222);
-            border-color: #888;
-        }
-        .btn.selected {
-            background: linear-gradient(#555, #333);
-            border-color: #aaa;
-            box-shadow: 0 0 0 3px rgba(255,255,255,0.5);
-            transform: scale(1.05);
-        }
-        .compact-btn {
-            display: inline-block;
-            width: 100%;
-            margin: 2px 0;
-            padding: 6px;
-            background: linear-gradient(#252525, #1a1a1a);
-            border: 1px solid #444;
-            border-radius: 6px;
-            color: white;
-            font-size: 0.7rem;
-            cursor: pointer;
-            outline: none;
-            transition: all 0.2s ease;
-        }
-        
-        /* Input Player Styles */
-        .input-btn {
-            padding: 10px;
-            margin: 5px;
-            min-width: 100px;
-            background: #252525;
-            border: 1px solid #444;
-            border-radius: 6px;
-            color: white;
-            cursor: pointer;
-        }
-        .input-btn.active {
-            background: #4a4a4a;
-            border-color: #4af;
-        }
-        .row {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            margin-bottom: 10px;
-        }
-        .player-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.9);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-        .record-indicator {
-            color: red;
-            font-weight: bold;
-            margin: 10px;
-        }
-        .record-btn-ui {
-            padding: 8px 12px;
-            margin: 0 5px;
-            background: #500;
-            border: none;
-            border-radius: 4px;
-            color: white;
-            cursor: pointer;
-        }
-        .choose-file-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1001;
-        }
-        .chooser-box {
-            background: #222;
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-        }
-        .chooser-path-input {
-            width: 100%;
-            padding: 8px;
-            margin: 5px 0;
-            background: #333;
-            border: 1px solid #555;
-            color: white;
-        }
-        .close-hint {
-            margin-top: 15px;
-            font-size: 0.8rem;
-            color: #aaa;
-        }
-        
-        /* Form Elements */
-        .form-box {
-            background: rgba(255,255,255,0.05);
-            padding: 12px;
-            margin: 12px auto;
-            border-radius: 8px;
-            max-width: 500px;
-        }
-        .form-box label {
-            display: block;
-            margin-top: 8px;
-            font-size: 14px;
-            color: #ccc;
-        }
-        .form-box input[type="text"],
-        .form-box input[type="checkbox"] {
-            margin-top: 5px;
-        }
-        
-        /* Section Layout */
-        .section {
-            margin-bottom: 10px;
-            padding: 8px;
-            background: rgba(255,255,255,0.03);
-            border-radius: 8px;
-        }
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 6px;
-            margin: 6px 0;
-        }
-        .compact-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
-            gap: 4px;
-            margin: 4px 0;
-        }
-        
-        /* Log Display */
-        #log {
-            position: fixed;
-            bottom: 10px;
-            left: 10px;
-            right: 10px;
-            font-size: 0.7rem;
-            color: #9a9a9a;
-            text-align: left;
-            background: rgba(255,255,255,0.05);
-            padding: 6px;
-            border-radius: 6px;
-            max-height: 100px;
-            overflow-y: auto;
-            z-index: 100;
-        }
-    </style>
+<meta charset="utf-8"/>
+<title>webOS Launcher + Menus (Recode)</title>
+<style>
+  :root{ --bg:#0b0b0b; --panel:#121212; --panel-2:#181818; --muted:#9aa0a6; --accent:#dcdcdc }
+  html,body{height:100%;margin:0;background:var(--bg);color:#fff;font-family:Arial, sans-serif;overflow:hidden}
+  .widget{
+    position:absolute;
+    min-width:200px;
+    max-width:360px;
+    background:linear-gradient(180deg,var(--panel),var(--panel-2));
+    border:1px solid rgba(255,255,255,.06);
+    border-radius:10px;
+    box-shadow:0 8px 20px rgba(0,0,0,.6);
+    padding:8px;
+    user-select:none;
+  }
+  .widget .title{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    cursor:grab;
+  }
+  .widget .title h1{margin:6px 0;font-size:16px;color:var(--accent);text-shadow:0 0 4px #000}
+  .widget .controls{margin-top:8px}
+  .btn{display:block;width:100%;margin:6px 0;padding:10px;background:linear-gradient(#303030,#1a1a1a);border:2px solid #555;border-radius:10px;color:#fff;font-weight:700;cursor:pointer;box-shadow:0 4px 6px rgba(0,0,0,.6);text-align:left}
+  .btn.small{padding:6px;font-size:13px;border-radius:8px}
+  .btn:hover{background:linear-gradient(#444,#222);border-color:#888}
+  .muted{opacity:.8;font-size:12px}
+  /* specific widgets positions */
+  #mainUI{left:12px;top:12px;width:260px}
+  #volumeUI{right:12px;top:40%;width:220px;transform:translateY(-50%)}
+  /* dialogs turned into widgets but hidden initially */
+  .dialog{display:none;z-index:99;min-width:240px}
+  /* log */
+  #log{
+    position:absolute;left:12px;bottom:12px;right:12px;height:28vh;max-height:36vh;overflow:auto;background:rgba(255,255,255,.03);
+    padding:10px;border-radius:10px;font-size:12px;color:var(--muted);white-space:pre-wrap;border:1px solid rgba(255,255,255,.03)
+  }
+  /* header action icons */
+  .title .actions{display:flex;gap:6px;align-items:center}
+  .icon{width:26px;height:26px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;background:rgba(255,255,255,.02);color:var(--muted);font-weight:700}
+  .icon:hover{background:rgba(255,255,255,.04)}
+  /* make focus visible */
+  button:focus{outline:2px solid rgba(200,200,255,.08);outline-offset:2px}
+  /* responsive tweak */
+  @media(max-width:720px){ #mainUI{left:8px;top:8px;width:46vw} #volumeUI{right:8px;top:35%} }
+  
+
+  
+</style>
 </head>
 <body>
-    <div class="tab-container">
-        <button class="tab-btn active" data-tab="main">Main</button>
-        <button class="tab-btn" data-tab="inputs">Inputs</button>
-        <button class="tab-btn" data-tab="live-tv">Live TV</button>
-        <button class="tab-btn" data-tab="toast">Toast</button>
-        <button class="tab-btn" data-tab="alert">Alert</button>
+
+<!-- MAIN LAUNCHER WIDGET -->
+<div id="mainUI" class="widget" data-widget>
+  <div class="title" data-drag-handle>
+    <h1>📺 Launcher</h1>
+    <div class="actions">
+      <div class="icon" title="Drag">☰</div>
+      <div class="icon" id="minMain" title="Hide">–</div>
+    </div>
+  </div>
+
+  <div class="controls" id="mainControls">
+    <button class="btn" onclick="launchApp('com.webos.app.browser')">Web Browser</button>
+    <button class="btn" onclick="launchApp('com.webos.app.cheeringtv')">Cheering TV</button>
+    <button class="btn" onclick="launchApp('com.palm.app.settings')">Settings</button>
+    <button class="btn" onclick="launchApp('com.webos.app.installation')">Secret Menu</button>
+    <button class="btn" onclick="launchApp('com.webos.app.discovery')">LG Store</button>
+
+    <div style="margin-top:8px">
+      <h1 style="font-size:14px;margin:6px 0 4px">🎮 TV Controls <small class="muted">(data-key)</small></h1>
+      <button class="btn small" data-key="FRONTKEY_INPUT_SELECT" onclick="sendKey(this)">Input</button>
+      <button class="btn small" data-key="MENU" onclick="sendKey(this)">Quick Settings</button>
+      <button class="btn small" data-key="PAIRING_M4" onclick="sendKey(this)">LG Magic Remote Pair</button>
     </div>
 
-    <div id="app-container">
-        <!-- Main Tab Content -->
-        <div id="main-tab" class="tab-content active">
-            <div class="section">
-                <h1>📺 TV Controls</h1>
-                <div class="grid-container">
-                    <button class="btn" data-key="FRONTKEY_INPUT_SELECT">Input</button>
-                    <button class="btn" data-key="MENU">Quick Settings</button>
-                    <button class="btn" data-key="PAIRING_M4">Magic Remote Pair</button>
-                    <button class="btn" onclick="showTVHotkeyMenu()">TVHotkey Menu</button>
-                    <button class="btn" onclick="showBrowserMenu()">Other</button>
-                </div>
-            </div>
-
-            <div class="section">
-                <h1>🔆 Display</h1>
-                <div class="grid-container">
-                    <button class="btn" data-key="BRIGHTNESS_UP">Brightness Up</button>
-                    <button class="btn" data-key="BRIGHTNESS_DOWN">Brightness Down</button>
-                </div>
-            </div>
-
-            <div class="section">
-                <h1>📺 Apps</h1>
-                <div class="grid-container">
-                    <button class="btn" onclick="launchApp('com.webos.app.browser')">Web Browser</button>
-                    <button class="btn" onclick="launchApp('com.webos.app.cheeringtv')">Cheering TV</button>
-                    <button class="btn" onclick="launchApp('com.palm.app.settings')">Settings</button>
-                    <button class="btn" onclick="launchApp('com.webos.app.installation')">Secret Menu</button>
-                    <button class="btn" onclick="launchApp('com.webos.app.discovery')">LG Content Store</button>
-                </div>
-            </div>
-
-            <div class="section">
-                <h1>🔊 Volume</h1>
-                <div class="grid-container">
-                    <button class="btn" onclick="volumeUp()">Volume Up</button>
-                    <button class="btn" onclick="volumeDown()">Volume Down</button>
-                    <button class="btn" onclick="toggleMute()">Mute</button>
-                    <button class="btn" onclick="showSoundAlert()">Sound Effects</button>
-                </div>
-            </div>
-
-            <div class="section">
-                <h1>🔊 PCM Sounds</h1>
-                <div class="compact-grid">
-                    <button class="compact-btn" onclick="playSound('power-on')">Power On</button>
-                    <button class="compact-btn" onclick="playSound('power-off')">Power Off</button>
-                    <button class="compact-btn" onclick="playSound('welcome')">Welcome</button>
-                    <button class="compact-btn" onclick="playSound('first-use-fail')">FU Fail</button>
-                    <button class="compact-btn" onclick="playSound('first-use-success')">FU Success</button>
-                    <button class="compact-btn" onclick="playSound('input-detected')">Input Detected</button>
-                    <button class="compact-btn" onclick="playSound('voicestart')">Voice Start</button>
-                    <button class="compact-btn" onclick="playSound('voiceconfirm')">Voice Confirm</button>
-                    <button class="compact-btn" onclick="playSound('voicecancel')">Voice Cancel</button>
-                    <button class="compact-btn" onclick="playSound('loading')">Loading</button>
-                </div>
-            </div>
-
-            <div class="section">
-                <h1>📺 TV Hotkeys</h1>
-                <div class="compact-grid">
-                    <button class="compact-btn" onclick="activateTVHotkey('energy-saving-mode')">Energy Saving</button>
-                    <button class="compact-btn" onclick="activateTVHotkey('aspect-ratio')">Aspect Ratio</button>
-                    <button class="compact-btn" onclick="activateTVHotkey('store-mode')">Store Mode</button>
-                    <button class="compact-btn" onclick="activateTVHotkey('soccer-mode')">Soccer Mode</button>
-                    <button class="compact-btn" onclick="activateTVHotkey('sleep')">Sleep Timer</button>
-                    <button class="compact-btn" onclick="activateTVHotkey('subtitle')">Subtitle</button>
-                    <button class="compact-btn" onclick="activateTVHotkey('simplink')">SIMPLINK</button>
-                    <button class="compact-btn" onclick="activateTVHotkey('3d-mode')">3D Mode</button>
-                    <button class="compact-btn" onclick="activateTVHotkey('local-key')">Local Key</button>
-                    <button class="compact-btn" onclick="activateTVHotkey('multi-sound-setting')">Multi Audio</button>
-                    <button class="compact-btn" onclick="activateTVHotkey('audio-description')">Audio Desc</button>
-                    <button class="compact-btn" onclick="takeScreenshot()">Screenshot</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Inputs Tab Content -->
-        <div id="inputs-tab" class="tab-content">
-            <h2>Input Runner (Simple Player)</h2>
-            <div id="inputList" tabindex="0">
-                <div class="row">
-                    <button class="input-btn" data-src="ext://hdmi:1">HDMI 1</button>
-                    <button class="input-btn" data-src="ext://hdmi:2">HDMI 2</button>
-                    <button class="input-btn" data-src="ext://hdmi:3">HDMI 3</button>
-                    <button class="input-btn" data-src="ext://hdmi:4">HDMI 4</button>
-                </div>
-                <div class="row">
-                    <button class="input-btn" data-src="ext://comp:1">Component 1</button>
-                    <button class="input-btn" data-src="ext://av:1">AV 1</button>
-                    <button class="input-btn" data-src="ext://av:2">AV 2</button>
-                    <button class="input-btn" data-src="ext://scart:1">SCART 1</button>
-                </div>
-                <div class="row">
-                    <button class="input-btn" data-src="atv://cable:1/dvb/1">Live TV 1</button>
-                    <button class="input-btn" data-src="atv://cable:2/dvb/2">Live TV 2</button>
-                </div>
-            </div>
-
-            <div id="playerModal" class="player-modal" style="display:none">
-                <div id="playerLabel"></div>
-                <div id="recordIndicator" class="record-indicator" style="display:none">● REC</div>
-                <video id="playerVideo" autoplay controls style="width: 50%; height: 50%;">
-                    <source id="playerSource" type="service/webos-external">
-                </video>
-                <div id="recordBtns" style="margin-top:8px;display:none;">
-                    <button type="button" class="record-btn-ui" id="manualStartBtn">● Start Recording</button>
-                    <button type="button" class="record-btn-ui" id="manualStopBtn">■ Stop &amp; Save</button>
-                </div>
-                <div class="close-hint">
-                    (BACKSPACE/BACK/ESC = Exit, Page Up/Down = Size, RECORD = Start, STOP = Save)
-                </div>
-            </div>
-
-            <div id="chooseFileModal" class="choose-file-modal" style="display:none">
-                <form class="chooser-box" id="fileChooserForm" autocomplete="off">
-                    <div style="font-size:1.1em;margin-bottom:10px;color:#f3c83d;">
-                        Save Recording<br>Enter folder, then a filename (mp4):
-                    </div>
-                    <input class="chooser-path-input" id="filePathInput" type="text" placeholder="/tmp/rec.mp4" value="/tmp/rec.mp4" autocomplete="off" required>
-                    <div style="margin-top:13px;">
-                        <button type="submit" class="record-btn-ui" style="background:#253;">Save</button>
-                        <button type="button" class="record-btn-ui" style="background:#334;" id="cancelChooserBtn">Cancel</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Live TV Tab Content -->
-        <div id="live-tv-tab" class="tab-content">
-            <h2>Live TV Channels</h2>
-            <div id="channelList" class="grid-container"></div>
-            <button id="scanChannelsBtn" class="btn" style="margin-top: 15px;">Scan for Channels</button>
-        </div>
-
-        <!-- Toast Generator Tab -->
-        <div id="toast-tab" class="tab-content">
-            <div class="section">
-                <h1>🍞 Toast Generator</h1>
-                <div class="form-box">
-                    <label>Message:</label>
-                    <input type="text" id="toastMsg" placeholder="Enter toast message">
-                    <label>Icon URL:</label>
-                    <input type="text" id="toastIcon" placeholder="/usr/palm/applications/com.webos.app.notificationcenter/icon_notification.png">
-                    <label><input type="checkbox" id="toastOnclick"> Add OnClick (Open Browser)</label>
-                    <button class="btn" onclick="generateToast()">Generate Toast</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Alert Generator Tab -->
-        <div id="alert-tab" class="tab-content">
-            <div class="section">
-                <h1>⚠️ Alert Generator</h1>
-                <div class="form-box">
-                    <label>Title:</label>
-                    <input type="text" id="alertTitle" placeholder="Enter alert title">
-                    <label>Message:</label>
-                    <input type="text" id="alertMessage" placeholder="Enter alert message">
-                    <label>Buttons (comma-separated):</label>
-                    <input type="text" id="alertButtons" placeholder="OK, Cancel">
-                    <button class="btn" onclick="generateAlert()">Generate Alert</button>
-                </div>
-            </div>
-        </div>
+    <div style="margin-top:8px">
+      <h1 style="font-size:14px;margin:6px 0 4px">🎛️ Menus</h1>
+      <button class="btn" id="pcmBtn">PCM Sounds</button>
+      <button class="btn" id="tvHotkeyMenuBtn">TVHotkey Menu</button>
+      <button class="btn" id="otherMenuBtn">Other Menu</button>
     </div>
+  </div>
+</div>
 
-    <pre id="log"></pre>
+<!-- VOLUME WIDGET -->
+<div id="volumeUI" class="widget" data-widget>
+  <div class="title" data-drag-handle>
+    <h1>🔊 Volume</h1>
+    <div class="actions">
+      <div class="icon" id="minVol" title="Hide">–</div>
+    </div>
+  </div>
+  <div class="controls">
+    <button class="btn" onclick="volumeUp()">Volume Up</button>
+    <button class="btn" onclick="volumeDown()">Volume Down</button>
+    <button class="btn" onclick="toggleMute()">Mute</button>
+    <div class="muted" style="margin-top:8px">Current: <span id="volVal">10</span> -- Muted: <span id="muteVal">false</span></div>
+    <div id="volumeUI">
+  <div class="dragHandle"><p></p></div>
+  <input type="number" id="volumeInput" placeholder="Enter number" class="btn" style="width:120px;display:inline-block;margin:5px 5px 5px 0;">
+  <button class="btn" style="width:80px;display:inline-block;" onclick="setVolumeFromInput()">Set</button>
+</div>
 
-    <script src="https://dropbox.inf.re/webos-gfn/wsproxy.js"></script>
-    <script src="https://dropbox.inf.re/webos-gfn/client.js"></script>
-    <script>
-        // Tab Navigation
-        const tabBtns = document.querySelectorAll('.tab-btn');
-        tabBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                // Remove active class from all tabs
-                tabBtns.forEach(b => b.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                
-                // Add active class to clicked tab
-                btn.classList.add('active');
-                document.getElementById(`${btn.dataset.tab}-tab`).classList.add('active');
-                
-                // Reinitialize keyboard navigation for the active tab
-                initKeyboardNavigation();
-            });
-        });
+  </div>
+</div>
 
-        // Input Player Code
-        var inputList = document.getElementById('inputList');
-        var playerModal = document.getElementById('playerModal');
-        var playerVideo = document.getElementById('playerVideo');
-        var playerSource = document.getElementById('playerSource');
-        var playerLabel = document.getElementById('playerLabel');
-        var inputBtns = Array.prototype.slice.call(document.querySelectorAll('.input-btn'));
-        var focusedIdx = 0;
-        var playerSizes = [
-            {w: "32vw", h: "28vh"}, // small
-            {w: "50vw", h: "50vh"}, // normal
-            {w: "80vw", h: "80vh"}, // big
-        ];
-        var playerSizeIdx = 1;
-        var playerIsOpen = false;
+<!-- Volume Setter -->
+<style>#inputsUI {
+  position: absolute;
+  top: 10%;
+  right: 20px;
+  width: 260px;
+  background: rgba(20,20,20,0.9);
+  padding: 10px;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0,0,0,.6);
+}
 
-        // Recording Support
-        var isRecording = false;
-        var recorder = null;
-        var recordedChunks = [];
-        var recordingSourceType = "";
-        var recordIndicator = document.getElementById('recordIndicator');
-        var recordBtns = document.getElementById('recordBtns');
-        var isLgWebos = navigator.userAgent.indexOf("WebOS") > -1 || navigator.userAgent.indexOf("webOS") > -1;
-        var chooseFileModal = document.getElementById("chooseFileModal");
-        var fileChooserForm = document.getElementById("fileChooserForm");
-        var filePathInput = document.getElementById("filePathInput");
-        var cancelChooserBtn = document.getElementById("cancelChooserBtn");
+.input-row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 5px;
+}
 
-        if (!isLgWebos) { recordBtns.style.display = ""; } else { recordBtns.style.display = "none"; }
+.input-btn {
+  flex: 1 1 48%;
+  margin: 2px;
+  padding: 8px;
+  background: linear-gradient(#303030,#1a1a1a);
+  border: 2px solid #555;
+  border-radius: 10px;
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+  text-align: center;
+}
 
-        function setActiveBtn(idx) {
-            inputBtns.forEach(function (btn, i) {
-                if (i === idx) {
-                    btn.classList.add("active");
-                    btn.focus();
-                } else {
-                    btn.classList.remove("active");
-                }
-            });
-            focusedIdx = idx;
-        }
+.input-btn:hover {
+  background: linear-gradient(#444,#222);
+  border-color:#888;
+}</style>
 
-        setActiveBtn(0);
+<script
+// Make Inputs panel draggable
+makeDraggable(document.getElementById("inputsUI"));
 
-        function openPlayer(idx) {
-            var btn = inputBtns[idx];
-            var src = btn.getAttribute('data-src');
-            var name = btn.textContent;
-            playerSource.src = src;
-            playerVideo.load();
-            playerLabel.textContent = name;
-            playerModal.style.display = "";
-            playerSizeIdx = 1;
-            setPlayerSize(playerSizeIdx);
-            playerVideo.focus();
-            playerIsOpen = true;
-            stopRecording(true); 
-            recordIndicator.style.display = "none";
-        }
+// Reference full-screen video
+const fullScreenVideo = document.getElementById("fullScreenVideo");
 
-        inputList.addEventListener('keydown', function (e) {
-            if (playerIsOpen) return;
-            if (e.key === "ArrowRight" || e.key === "ArrowDown") {
-                var next = (focusedIdx + 1) % inputBtns.length;
-                setActiveBtn(next);
-                e.preventDefault();
-            } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
-                var prev = (focusedIdx - 1 + inputBtns.length) % inputBtns.length;
-                setActiveBtn(prev);
-                e.preventDefault();
-            } else if (e.key === "Enter" || e.key === " ") {
-                openPlayer(focusedIdx);
-                e.preventDefault();
-            }
-        });
+// Play selected input full screen
+const inputBtns = document.querySelectorAll("#inputsUI .input-btn");
+inputBtns.forEach(btn => {
+  btn.addEventListener("click", () => {
+    const src = btn.dataset.src;
+    fullScreenVideo.src = src;
+    fullScreenVideo.style.display = "block";
+    fullScreenVideo.play();
+  });
+});
 
-        inputBtns.forEach(function (btn, idx) {
-            btn.addEventListener('click', function () {
-                setActiveBtn(idx);
-                openPlayer(idx);
-            });
-            btn.addEventListener('focus', function () { setActiveBtn(idx); });
-        });
-
-        function setPlayerSize(idx) {
-            idx = Math.max(0, Math.min(2, idx));
-            playerSizeIdx = idx;
-            var sz = playerSizes[idx];
-            playerVideo.style.width = sz.w;
-            playerVideo.style.height = sz.h;
-        }
-
-        function exitPlayer() {
-            playerModal.style.display = "none";
-            playerVideo.pause();
-            playerIsOpen = false;
-            stopRecording(true); 
-            inputList.focus();
-            setActiveBtn(focusedIdx);
-            recordIndicator.style.display = "none";
-        }
-
-        function tryStartWebosRecord() {
-            if (window.webOS && window.webOS.service) {
-                alert("Start recording (webOS API call goes here)");
-                isRecording = true;
-                recordingSourceType = playerSource.src;
-                recordIndicator.style.display = "";
-            } else {
-                alert("Recording is only available on LG webOS TV!");
-            }
-        }
-
-        function tryStopWebosRecordAndSave() {
-            function doSave(filePath) {
-                if (window.webOS && window.webOS.service) {
-                    alert("Save recording to: " + filePath + "\n(webOS API call goes here)");
-                    isRecording = false;
-                    recordIndicator.style.display = "none";
-                } else {
-                    alert("Saving is only available on LG webOS TV!");
-                }
-            }
-
-            chooseFileModal.style.display = "";
-            filePathInput.value = "/tmp/rec.mp4";
-            filePathInput.focus();
-            fileChooserForm.onsubmit = function(ev) {
-                ev.preventDefault();
-                var path = filePathInput.value || "/tmp/rec.mp4";
-                doSave(path);
-                chooseFileModal.style.display = "none";
-                return false;
-            };
-            cancelChooserBtn.onclick = function() {
-                chooseFileModal.style.display = "none";
-            }
-        }
-
-        function startRecording() {
-            if (isLgWebos) {
-                tryStartWebosRecord();
-                return;
-            }
-            if (!window.MediaRecorder) {
-                alert("MediaRecorder not supported.");
-                return;
-            }
-            try {
-                var stream = playerVideo.captureStream ? playerVideo.captureStream() :
-                             playerVideo.mozCaptureStream ? playerVideo.mozCaptureStream() : null;
-                if (!stream) { alert("Cannot record this video."); return; }
-                recorder = new MediaRecorder(stream, {mimeType: "video/webm"});
-                recordedChunks = [];
-                recorder.ondataavailable = function(e){ if(e.data.size>0) recordedChunks.push(e.data);}
-                recorder.onstop = function(){
-                    recordIndicator.style.display = "none";
-                    var blob = new Blob(recordedChunks, {type:"video/webm"});
-                    var url = URL.createObjectURL(blob);
-                    showSaveDialog(url, "recorded.webm");
-                }
-                recorder.start();
-                isRecording = true;
-                recordingSourceType = playerSource.src;
-                recordIndicator.style.display = "";
-            } catch (e) {
-                alert("Record error: "+e);
-            }
-        }
-
-        function stopRecording(forceDiscard) {
-            if (isLgWebos) {
-                if (isRecording && !forceDiscard) tryStopWebosRecordAndSave();
-                isRecording = false;
-                recordIndicator.style.display = "none";
-                return;
-            }
-            if (recorder) {
-                try { recorder.stop(); } catch (e) {}
-                recorder = null;
-                isRecording = false;
-            }
-            recordIndicator.style.display = "none";
-        }
-
-        function showSaveDialog(url, filename) {
-            var a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(function(){document.body.removeChild(a); window.URL.revokeObjectURL(url);},500);
-        }
-
-        if (!isLgWebos) {
-            document.getElementById("manualStartBtn").onclick = function() {
-                if (!isRecording) startRecording();
-            }
-            document.getElementById("manualStopBtn").onclick = function() {
-                if (isRecording) stopRecording(false);
-            }
-        }
-
-        document.addEventListener('keydown', function (e) {
-            if (playerIsOpen) {
-                if (
-                    e.key === "Backspace" ||
-                    e.key === "Escape" ||
-                    e.key === "VK_BACK" ||
-                    e.key === "BACK" ||
-                    e.keyCode === 461 ||
-                    e.keyCode === 412
-                ) {
-                    exitPlayer();
-                    e.preventDefault();
-                    return;
-                }
-                if (e.key === "PageUp" || e.keyCode === 33) {
-                    setPlayerSize(Math.min(playerSizeIdx + 1, 2));
-                    e.preventDefault();
-                }
-                if (e.key === "PageDown" || e.keyCode === 34) {
-                    setPlayerSize(Math.max(playerSizeIdx - 1, 0));
-                    e.preventDefault();
-                }
-                if ((e.keyCode === 167 || e.code === "MediaRecord") && !isRecording) {
-                    startRecording();
-                    e.preventDefault();
-                }
-                if ((e.keyCode === 128 || e.code === "MediaStop") && isRecording) {
-                    stopRecording(false);
-                    e.preventDefault();
-                }
-            }
-        });
-
-        playerModal.addEventListener('click', function (e) {
-            if (e.target === playerModal) exitPlayer();
-        });
-
-        inputList.setAttribute("tabindex", "0");
-
-        // Live TV Channel Scanner
-        const channelList = document.getElementById('channelList');
-        const scanChannelsBtn = document.getElementById('scanChannelsBtn');
-
-        function scanChannels() {
-            channelList.innerHTML = '<div class="btn">Scanning for channels...</div>';
-            
-            // Simulate scanning delay
-            setTimeout(() => {
-                // Mock channel data - replace with actual webOS TV API calls
-                const mockChannels = [
-                    { number: 1, name: "HDMI 1", src: "ext://hdmi:1" },
-                    { number: 2, name: "HDMI 2", src: "ext://hdmi:2" },
-                    { number: 3, name: "Cable TV", src: "atv://cable:1/dvb/1" },
-                    { number: 4, name: "News Channel", src: "atv://cable:2/dvb/2" },
-                    { number: 5, name: "Sports HD", src: "atv://cable:3/dvb/3" },
-                    { number: 6, name: "Movie Channel", src: "atv://cable:4/dvb/4" }
-                ];
-                
-                channelList.innerHTML = '';
-                mockChannels.forEach(channel => {
-                    const btn = document.createElement('button');
-                    btn.className = 'btn';
-                    btn.textContent = `${channel.number}. ${channel.name}`;
-                    btn.dataset.src = channel.src;
-                    btn.addEventListener('click', () => {
-                        playerSource.src = channel.src;
-                        playerVideo.load();
-                        playerLabel.textContent = channel.name;
-                        playerModal.style.display = "";
-                        playerSizeIdx = 1;
-                        setPlayerSize(playerSizeIdx);
-                        playerVideo.focus();
-                        playerIsOpen = true;
-                    });
-                    channelList.appendChild(btn);
-                });
-                
-                log("Channel scan completed. Found " + mockChannels.length + " channels.");
-            }, 2000);
-        }
-
-        scanChannelsBtn.addEventListener('click', scanChannels);
-
-        // Initialize with some channels
-        scanChannels();
-
-        // Toast Generator
-        async function generateToast() {
-            try {
-                const client = await ensureClient();
-                const msg = document.getElementById("toastMsg").value || "Hello from webOS!";
-                const icon = document.getElementById("toastIcon").value || "";
-                const addOnclick = document.getElementById("toastOnclick").checked;
-                
-                let payload = { message: msg };
-                if (icon) payload.iconUrl = icon;
-                if (addOnclick) {
-                    payload.noaction = false;
-                    payload.onclick = {
-                        appId: "com.webos.app.browser",
-                        params: { target: "https://inputrunner.github.io/simple_index.html" }
-                    };
-                }
-                
-                await client.request({
-                    uri: "ssap://system.notifications/createToast",
-                    payload
-                });
-                log("Toast sent: " + JSON.stringify(payload));
-            } catch (e) {
-                log("Failed to generate toast: " + e);
-            }
-        }
-
-        // Alert Generator
-        async function generateAlert() {
-            try {
-                const client = await ensureClient();
-                const title = document.getElementById("alertTitle").value || "Alert";
-                const message = document.getElementById("alertMessage").value || "This is a test alert.";
-                const btns = document.getElementById("alertButtons").value.split(",").map(b => b.trim());
-                const buttons = btns.map(label => ({ label }));
-                
-                const payload = { title, message, buttons };
-                await client.request({
-                    uri: "ssap://system.notifications/createAlert",
-                    payload
-                });
-                log("Alert sent: " + JSON.stringify(payload));
-            } catch (e) {
-                log("Failed to generate alert: " + e);
-            }
-        }
-
-        // Client and App Logic
-        let client;
-        let currentVolume = 10;
-        let isMuted = false;
-        const isChrome79 = navigator.userAgent.includes('Chrome/79');
-        const isChrome53 = navigator.userAgent.includes('Chrome/53');
-
-        async function ensureClient() {
-            if (!client) {
-                await initClient();
-            }
-            return client;
-        }
-
-        function log(msg) {
-            const l = document.querySelector("#log");
-            l.innerText = "[" + new Date().toLocaleTimeString() + "] " + msg + "\n" + l.innerText;
-        }
-
-        async function initClient() {
-            const target = "127.0.0.1";
-            log("connecting to " + target + "...");
-            
-            if (isChrome79) {
-                client = new SSAPClient(target, window.localStorage["client-key-" + target]);
-                await client.connect();
-                log("registering...");
-                window.localStorage["client-key-" + target] = await client.register();
-            } else if (isChrome53) {
-                client = {
-                    request: function(options) {
-                        return new Promise((resolve, reject) => {
-                            var request = new XMLHttpRequest();
-                            request.open("POST", options.uri, true);
-                            request.setRequestHeader("Content-Type", "application/json");
-                            
-                            request.onload = function() {
-                                if (request.status >= 200 && request.status < 300) {
-                                    resolve(JSON.parse(request.responseText));
-                                } else {
-                                    reject(new Error(request.statusText));
-                                }
-                            };
-                            
-                            request.onerror = function() {
-                                reject(new Error("Network error"));
-                            };
-                            
-                            request.send(JSON.stringify(options.payload));
-                        });
-                    }
-                };
-                log("Using legacy XMLHttpRequest method");
-            }
-            return client;
-        }
-
-        async function pressKey(key) {
-            try {
-                const client = await ensureClient();
-                await client.request({
-                    uri: "ssap://com.webos.service.ime/sendEnterKey",
-                    payload: { key: key }
-                });
-                log("Pressed key: " + key);
-            } catch (e) {
-                log("Failed to press key: " + e);
-            }
-        }
-
-        async function launchApp(appId) {
-            try {
-                const client = await ensureClient();
-                await client.request({
-                    uri: "ssap://system.launcher/launch",
-                    payload: { id: appId }
-                });
-                log("Launched: " + appId);
-            } catch (e) {
-                log("failed: " + e);
-            }
-        }
-
-        async function volumeUp() {
-            try {
-                const client = await ensureClient();
-                currentVolume++;
-                await client.request({
-                    uri: "ssap://audio/setVolume",
-                    payload: { volume: currentVolume }
-                });
-                log("Volume set to " + currentVolume);
-            } catch (e) {
-                log("Error: " + e);
-            }
-        }
-
-        async function volumeDown() {
-            try {
-                const client = await ensureClient();
-                currentVolume = Math.max(0, currentVolume - 1);
-                await client.request({
-                    uri: "ssap://audio/setVolume",
-                    payload: { volume: currentVolume }
-                });
-                log("Volume set to " + currentVolume);
-            } catch (e) {
-                log("Error: " + e);
-            }
-        }
-
-        async function toggleMute() {
-            try {
-                const client = await ensureClient();
-                isMuted = !isMuted;
-                await client.request({
-                    uri: "ssap://audio/setMute",
-                    payload: { mute: isMuted }
-                });
-                log("Mute: " + isMuted);
-            } catch (e) {
-                log("Error: " + e);
-            }
-        }
-
-        async function playSound(soundName) {
-            try {
-                const client = await ensureClient();
-                await client.request({
-                    uri: "luna://com.webos.audio/systemsounds/playFeedback",
-                    payload: {
-                        play: true,
-                        sink: "pfeedback",
-                        name: soundName
-                    }
-                });
-                log("Played sound: " + soundName);
-            } catch (e) {
-                log("Failed to play sound: " + e);
-            }
-        }
-
-        async function activateTVHotkey(activateType) {
-            try {
-                const client = await ensureClient();
-                await client.request({
-                    uri: "luna://com.webos.service.applicationManager/launch",
-                    payload: {
-                        id: "com.webos.app.tvhotkey",
-                        params: { activateType: activateType }
-                    }
-                });
-                log("Activated TVHotkey: " + activateType);
-            } catch (e) {
-                log("Failed to activate TVHotkey: " + e);
-            }
-        }
-
-        async function takeScreenshot() {
-            try {
-                const client = await ensureClient();
-                await client.request({
-                    uri: "luna://org.webosbrew.hbchannel.service/exec",
-                    payload: {
-                        command: "/media/developer/apps/usr/palm/applications/org.set.app/screenshot-flow.sh"
-                    }
-                });
-                log("Screenshot taken");
-            } catch (e) {
-                log("Failed to take screenshot: " + e);
-            }
-        }
-
-        async function showTVHotkeyMenu() {
-            try {
-                const client = await ensureClient();
-                const buttons = [
-                    { label: "Energy Saving", onclick: { uri: "luna://com.webos.service.applicationManager/launch", params: { id: "com.webos.app.tvhotkey", params: { activateType: "energy-saving-mode" } } } },
-                    { label: "Aspect Ratio", onclick: { uri: "luna://com.webos.service.applicationManager/launch", params: { id: "com.webos.app.tvhotkey", params: { activateType: "aspect-ratio" } } } },
-                    { label: "Store Mode", onclick: { uri: "luna://com.webos.service.applicationManager/launch", params: { id: "com.webos.app.tvhotkey", params: { activateType: "store-mode" } } } },
-                    { label: "Soccer Mode", onclick: { uri: "luna://com.webos.service.applicationManager/launch", params: { id: "com.webos.app.tvhotkey", params: { activateType: "soccer-mode" } } } },
-                    { label: "Sleep Timer", onclick: { uri: "luna://com.webos.service.applicationManager/launch", params: { id: "com.webos.app.tvhotkey", params: { activateType: "sleep" } } } },
-                    { label: "Subtitle", onclick: { uri: "luna://com.webos.service.applicationManager/launch", params: { id: "com.webos.app.tvhotkey", params: { activateType: "subtitle" } } } },
-                    { label: "SIMPLINK", onclick: { uri: "luna://com.webos.service.applicationManager/launch", params: { id: "com.webos.app.tvhotkey", params: { activateType: "simplink" } } } },
-                    { label: "3D Mode", onclick: { uri: "luna://com.webos.service.applicationManager/launch", params: { id: "com.webos.app.tvhotkey", params: { activateType: "3d-mode" } } } },
-                    { label: "One Local Key", onclick: { uri: "luna://com.webos.service.applicationManager/launch", params: { id: "com.webos.app.tvhotkey", params: { activateType: "one-local-key" } } } },
-                    { label: "Local Key Menu", onclick: { uri: "luna://com.webos.service.applicationManager/launch", params: { id: "com.webos.app.tvhotkey", params: { activateType: "local-key" } } } },
-                    { label: "Multi Audio", onclick: { uri: "luna://com.webos.service.applicationManager/launch", params: { id: "com.webos.app.tvhotkey", params: { activateType: "multi-sound-setting" } } } },
-                    { label: "Audio Description", onclick: { uri: "luna://com.webos.service.applicationManager/launch", params: { id: "com.webos.app.tvhotkey", params: { activateType: "audio-description" } } } },
-                    { label: "Screenshot", onclick: { uri: "luna://org.webosbrew.hbchannel.service/exec", params: { command: "/media/developer/apps/usr/palm/applications/org.set.app/screenshot-flow.sh" } } }
-                ];
-                
-                await client.request({
-                    uri: "ssap://system.notifications/createAlert",
-                    payload: {
-                        title: "webOS TVHotkey Settings",
-                        message: "Choose a function to launch:",
-                        buttons: buttons
-                    }
-                });
-                log("TVHotkey menu shown");
-            } catch (e) {
-                log("Failed to show TVHotkey menu: " + e);
-            }
-        }
-
-        async function showBrowserMenu() {
-            try {
-                const client = await ensureClient();
-                const buttons = [
-                    { label: "BeanBrowser", onclick: { uri: "luna://com.webos.applicationManager/launch", params: { id: "com.webos.app.beanbrowser", params: { contentTarget: "https://m.youtube.com", ui: ["Exit"], x: 100, y: 350, width: 500, height: 700, overlay: true } } } },
-                    { label: "Web Browser", onclick: { uri: "luna://com.webos.applicationManager/launch", params: { id: "com.webos.app.browser" } } },
-                    { label: "Web App", onclick: { uri: "luna://com.webos.applicationManager/launch", params: { id: "com.webos.app.webapphost" } } },
-                    { label: "Watch a Video", onclick: { uri: "luna://com.webos.applicationManager/launch", params: { id: "com.webos.app.photovideo", params: { payload: [{ fullPath: "/media/developer/apps/usr/palm/applications/com.m12c.tvhotkeymenu/aww.mp4", mediaType: "VIDEO", fileName: "Chickadee", thumbnail: "/usr/palm/applications/com.webos.app.cheeringtv/areaWhite.png", lastPlayPosition: -1 }] } } } },
-                    { label: "Play a Sound", onclick: { uri: "luna://com.webos.applicationManager/launch", params: { id: "com.webos.app.music", params: { payload: [{ fullPath: "/usr/palm/applications/com.webos.app.cheeringtv/assets/sounds/mono/fireworks.wav", mediaType: "MUSIC", deviceType: "DMR", fileName: "fireworks", thumbnail: "/usr/palm/applications/com.webos.app.cheeringtv/areaWhite.png", subtitle: "", lastPlayPosition: -1, album: "", artist: "", dlnaInfo: { protocolInfo: "http-get:*:audio/mpeg:DLNA.ORG_PN=MP3;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=01500000000000000000000000000000", contentLength: "-1", duration: 0, opVal: 1, flagVal: 0, cleartextSize: "-1" } }] } } } },
-                    { label: "Screen Record", onclick: { uri: "luna://org.webosbrew.hbchannel.service/exec", params: { command: "/media/developer/apps/usr/palm/applications/com.m12c.tvhotkeymenu/start-record.sh" } } }
-                ];
-                
-                await client.request({
-                    uri: "ssap://system.notifications/createAlert",
-                    payload: {
-                        title: "Pick a Browser",
-                        message: "Select an option:",
-                        buttons: buttons
-                    }
-                });
-                log("Browser menu shown");
-            } catch (e) {
-                log("Failed to show browser menu: " + e);
-            }
-        }
-
-        async function playSound(soundName) {
-    try {
-        const soundPayloads = {
-            'power-on': {play: true, sink: "pfeedback", name: "power-on"},
-            'power-off': {play: true, sink: "pfeedback", name: "power-off"},
-            'welcome': {play: true, sink: "pfeedback", name: "welcome"},
-            'first-use-fail': {play: true, sink: "pfeedback", name: "first-use-fail"},
-            'first-use-success': {play: true, sink: "pfeedback", name: "first-use-success"},
-            'input-detected': {play: true, sink: "pfeedback", name: "input-detected"},
-            'voicestart': {play: true, sink: "pfeedback", name: "voicestart"},
-            'voiceconfirm': {play: true, sink: "pfeedback", name: "voiceconfirm"},
-            'voicecancel': {play: true, sink: "pfeedback", name: "voicecancel"},
-            'loading': {play: true, sink: "pfeedback", name: "loading"}
-        };
-
-        if (soundPayloads[soundName]) {
-            const client = await ensureClient();
-            await client.request({
-                uri: "luna://com.webos.audio/systemsounds/playFeedback",
-                payload: soundPayloads[soundName]
-            });
-            log("Played sound: " + soundName);
-        } else {
-            log("Unknown sound: " + soundName);
-        }
-    } catch (e) {
-        log("Failed to play sound: " + e);
+// Exit full-screen video on ESC or click
+document.addEventListener("keydown", e => {
+  if (fullScreenVideo.style.display === "block") {
+    if (e.key === "Escape" || e.key === "Backspace") {
+      fullScreenVideo.pause();
+      fullScreenVideo.style.display = "none";
+      fullScreenVideo.src = "";
     }
-        }
-                
-                await client.request({
-                    uri: "ssap://system.notifications/createAlert",
-                    payload: {
-                        title: "webOS Sound Settings",
-                        message: "Choose a Sound Effect to play:",
-                        buttons: buttons
-                    }
-                });
-                log("Sound selection alert shown");
-            } catch (e) {
-                log("Failed to show sound alert: " + e);
-            }
-        }
+  }
+});
 
-        // Initialize everything when page loads
-        window.addEventListener('load', function() {
-            initClient().catch(e => log("Initialization error: " + e));
-            inputList.focus();
-            setActiveBtn(0);
-            scanChannels(); // Initialize Live TV channels
-        });
-    </script>
+fullScreenVideo.addEventListener("click", () => {
+  fullScreenVideo.pause();
+  fullScreenVideo.style.display = "none";
+  fullScreenVideo.src = "";
+});
+<!-- Inputs Panel -->
+<div id="inputsUI">
+  <div class="dragHandle">🎛️ Inputs</div>
+  <div class="input-row">
+    <button class="input-btn" data-src="ext://hdmi:1">HDMI 1</button>
+    <button class="input-btn" data-src="ext://hdmi:2">HDMI 2</button>
+    <button class="input-btn" data-src="ext://hdmi:3">HDMI 3</button>
+    <button class="input-btn" data-src="ext://hdmi:4">HDMI 4</button>
+  </div>
+  <div class="input-row">
+    <button class="input-btn" data-src="ext://comp:1">Component 1</button>
+    <button class="input-btn" data-src="ext://av:1">AV 1</button>
+    <button class="input-btn" data-src="ext://av:2">AV 2</button>
+    <button class="input-btn" data-src="ext://scart:1">SCART 1</button>
+  </div>
+  <div class="input-row">
+    <button class="input-btn" data-src="atv://cable:1/dvb/1">Live TV 1</button>
+    <button class="input-btn" data-src="atv://cable:2/dvb/2">Live TV 2</button>
+  </div>
+</div>
+
+<!-- Inputs Panel -->
+<div id="inputsUI">
+  <div class="dragHandle">🎛️ Inputs</div>
+  <div class="input-row">
+    <button class="input-btn" data-src="ext://hdmi:1">HDMI 1</button>
+    <button class="input-btn" data-src="ext://hdmi:2">HDMI 2</button>
+    <button class="input-btn" data-src="ext://hdmi:3">HDMI 3</button>
+    <button class="input-btn" data-src="ext://hdmi:4">HDMI 4</button>
+  </div>
+  <div class="input-row">
+    <button class="input-btn" data-src="ext://comp:1">Component 1</button>
+    <button class="input-btn" data-src="ext://av:1">AV 1</button>
+    <button class="input-btn" data-src="ext://av:2">AV 2</button>
+    <button class="input-btn" data-src="ext://scart:1">SCART 1</button>
+  </div>
+  <div class="input-row">
+    <button class="input-btn" data-src="atv://cable:1/dvb/1">Live TV 1</button>
+    <button class="input-btn" data-src="atv://cable:2/dvb/2">Live TV 2</button>
+  </div>
+</div>
+
+<video id="fullScreenVideo" autoplay style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:999;"></video>
+
+<style>
+#inputsUI{position:absolute;top:10%;right:20px;width:260px;background:rgba(20,20,20,0.9);padding:10px;border-radius:12px;box-shadow:0 4px 8px rgba(0,0,0,.6);}
+.input-row{display:flex;flex-wrap:wrap;margin-bottom:5px;}
+.input-btn{flex:1 1 48%;margin:2px;padding:8px;background:linear-gradient(#303030,#1a1a1a);border:2px solid #555;border-radius:10px;color:#fff;font-weight:bold;cursor:pointer;text-align:center;}
+.input-btn:hover{background:linear-gradient(#444,#222);border-color:#888;}
+.dragHandle{cursor:move;font-weight:bold;margin-bottom:6px;}
+</style>
+
+<script>
+// Make draggable
+function makeDraggable(el){let isDown=false,offsetX,offsetY;const handle=el.querySelector('.dragHandle');handle.onmousedown=function(e){isDown=true;offsetX=e.clientX-el.offsetLeft;offsetY=e.clientY-el.offsetTop;document.body.style.userSelect='none';};document.onmouseup=function(){isDown=false;document.body.style.userSelect='auto';};document.onmousemove=function(e){if(!isDown)return;el.style.left=(e.clientX-offsetX)+'px';el.style.top=(e.clientY-offsetY)+'px';};}
+makeDraggable(document.getElementById("inputsUI"));
+
+// Full-screen video logic
+const fullScreenVideo=document.getElementById("fullScreenVideo");
+const inputBtns=document.querySelectorAll("#inputsUI .input-btn");
+inputBtns.forEach(btn=>{btn.addEventListener("click",()=>{const src=btn.dataset.src;fullScreenVideo.src=src;fullScreenVideo.style.display="block";fullScreenVideo.play();});});
+
+// Exit full-screen on ESC, Backspace, or click
+document.addEventListener("keydown",e=>{if(fullScreenVideo.style.display==="block"){if(e.key==="Escape"||e.key==="Backspace"){fullScreenVideo.pause();fullScreenVideo.style.display="none";fullScreenVideo.src="";}}});
+fullScreenVideo.addEventListener("click",()=>{fullScreenVideo.pause();fullScreenVideo.style.display="none";fullScreenVideo.src="";});
+</script>
+<!-- Fullscreen video container -->
+<video id="fullScreenVideo" autoplay style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:999;" ></video>
+
+<!-- DIALOG WIDGETS (hidden until opened) -->
+<div id="pcmDialog" class="widget dialog" data-widget style="display:none">
+  <div class="title" data-drag-handle>
+    <h1>PCM Sounds</h1>
+    <div class="actions"><div class="icon" id="closePcm">✕</div></div>
+  </div>
+  <div class="controls" id="pcmButtons"></div>
+</div>
+
+<div id="tvHotkeyDialog" class="widget dialog" data-widget style="display:none">
+  <div class="title" data-drag-handle>
+    <h1>TVHotkey Menu</h1>
+    <div class="actions"><div class="icon" id="closeHotkey">✕</div></div>
+  </div>
+  <div class="controls" id="tvHotkeyButtons"></div>
+</div>
+
+<div id="otherDialog" class="widget dialog" data-widget style="display:none">
+  <div class="title" data-drag-handle>
+    <h1>Other Menu</h1>
+    <div class="actions"><div class="icon" id="closeOther">✕</div></div>
+  </div>
+  <div class="controls" id="otherButtons"></div>
+</div>
+
+<!-- LOG -->
+<pre id="log"></pre>
+
+<!-- external scripts (kept as-is) -->
+<script src="https://dropbox.inf.re/webos-gfn/wsproxy.js"></script>
+<script src="https://dropbox.inf.re/webos-gfn/client.js"></script>
+
+<script>
+/* --------------------------
+   Core: Logging & SSAP client
+   --------------------------*/
+let client, currentVolume = 10, isMuted = false, selectedBtn = null;
+function log(m){
+  const L = document.getElementById('log');
+  L.textContent = '[' + new Date().toLocaleTimeString() + '] ' + m + '\n' + L.textContent;
+  // keep log length reasonable
+  if(L.textContent.length > 20000) L.textContent = L.textContent.slice(0,20000);
+}
+
+/* SSAP client init (unchanged) */
+async function initClient(){
+  if(client) return;
+  try{
+    client = new SSAPClient('127.0.0.1', localStorage['client-key-127.0.0.1']);
+    await client.connect();
+    localStorage['client-key-127.0.0.1'] = await client.register();
+  }catch(e){ log('SSAP init error: '+e); }
+}
+
+/* mapSsapToLuna and sendReq preserved but hardened for undefined webOS */
+function mapSsapToLuna(uri){
+  if(uri.startsWith('luna://')){ const p = uri.replace('luna://','').split('/'); return { service:'luna://'+p[0], method:p.slice(1).join('/') } }
+  const path = uri.replace('ssap://',''); const parts = path.split('/'); let domain = parts[0], method = parts.slice(1).join('/');
+  if(domain==='system.launcher') domain='com.webos.applicationManager';
+  else if(domain==='system.notifications') domain='com.webos.notification';
+  else if(domain==='audio') domain='com.webos.audio';
+  return { service:'luna://'+domain, method };
+}
+function sendReq(uri, payload={}){
+  const ua = navigator.userAgent || '';
+  const isC53 = ua.includes('Chrome/53');
+  if(isC53 && window.webOS && webOS.service){
+    const {service, method} = mapSsapToLuna(uri);
+    webOS.service.request(service, { method, parameters: payload,
+      onSuccess: (r)=> log('OK '+method),
+      onFailure: (e)=> log('ERR '+(e && (e.errorText || e)) )
+    });
+  } else {
+    (async()=>{
+      try{
+        if(!client) await initClient();
+        await client.request({uri, payload});
+        log('OK ' + uri);
+      }catch(e){ log('ERR ' + (e && e.toString())); }
+    })();
+  }
+}
+
+/* --------------------------
+   Actions (unchanged)
+   --------------------------*/
+async function launchApp(id){ sendReq('ssap://system.launcher/launch', {id}) }
+async function volumeUp(){ currentVolume++; currentVolume = Math.min(100, currentVolume); sendReq('ssap://audio/setVolume',{volume:currentVolume}); updateVolUI(); }
+async function volumeDown(){ currentVolume = Math.max(0, currentVolume-1); sendReq('ssap://audio/setVolume',{volume:currentVolume}); updateVolUI(); }
+async function toggleMute(){ isMuted = !isMuted; sendReq('ssap://audio/setMute',{mute:isMuted}); updateVolUI(); }
+function sendKey(el){ const key = el.dataset.key; sendReq('ssap://com.webos.service.tvinput/sendKeyEvent',{key}); log('Key '+key); }
+function closeWidget(el){ el.style.display='none'; }
+
+/* update numeric displayed values */
+function updateVolUI(){
+  document.getElementById('volVal').textContent = currentVolume;
+  document.getElementById('muteVal').textContent = isMuted;
+  log('Volume ' + currentVolume + (isMuted? ' (muted)':'' ));
+}
+
+/* --------------------------
+   Draggable system (generic)
+   - widgets with [data-widget]
+   - drag handle = child with [data-drag-handle]
+   --------------------------*/
+(function makeDraggable(){
+  const widgets = document.querySelectorAll('[data-widget]');
+  widgets.forEach(w=>{
+    const handle = w.querySelector('[data-drag-handle]') || w;
+    handle.style.touchAction = 'none';
+    let dragging=false, startX=0, startY=0, origLeft=0, origTop=0;
+    handle.addEventListener('mousedown', startDrag);
+    handle.addEventListener('touchstart', startDrag, {passive:false});
+    function startDrag(e){
+      e.preventDefault();
+      dragging = true;
+      const ev = e.touches ? e.touches[0] : e;
+      startX = ev.clientX; startY = ev.clientY;
+      // get computed pos; if not set convert right/transform to left
+      const rect = w.getBoundingClientRect();
+      origLeft = rect.left + window.scrollX;
+      origTop = rect.top + window.scrollY;
+      w.style.transition = 'none';
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', endDrag);
+      document.addEventListener('touchmove', onMove, {passive:false});
+      document.addEventListener('touchend', endDrag);
+    }
+    function onMove(e){
+      if(!dragging) return;
+      const ev = e.touches ? e.touches[0] : e;
+      const dx = ev.clientX - startX;
+      const dy = ev.clientY - startY;
+      const newLeft = Math.max(6, Math.min(window.innerWidth - w.offsetWidth - 6, origLeft + dx));
+      const newTop = Math.max(6, Math.min(window.innerHeight - w.offsetHeight - 6, origTop + dy));
+      w.style.left = newLeft + 'px';
+      w.style.top = newTop + 'px';
+      // clear right/transform so position is explicit
+      w.style.right = 'auto';
+      w.style.transform = 'none';
+      // ensure visible z
+      w.style.zIndex = 200;
+      e.preventDefault();
+    }
+    function endDrag(){
+      dragging = false;
+      // small transition back to natural look
+      w.style.transition = 'box-shadow .2s';
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', endDrag);
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('touchend', endDrag);
+    }
+  });
+})();
+
+/* --------------------------
+   Setup dialog buttons & open/close
+   --------------------------*/
+function setupDialogButtons(containerId, arr){
+  const c = document.getElementById(containerId);
+  c.innerHTML = '';
+  arr.forEach(opt=>{
+    const b = document.createElement('button');
+    b.className = 'btn small';
+    b.textContent = opt.label;
+    b.dataset.key = opt.key || '';
+    b.onclick = ()=> {
+      if(opt.key) { sendReq('ssap://com.webos.service.tvinput/sendKeyEvent',{key:opt.key}); log('Key '+opt.key); }
+      else if(opt.onclick) { sendReq(opt.onclick, opt.params || {}); }
+    };
+    c.appendChild(b);
+  });
+}
+
+/* PCM */
+const pcmSounds=[
+  {label:'Power On',name:'power-on'},{label:'Power Off',name:'power-off'},{label:'Welcome',name:'welcome'},
+  {label:'FU Fail',name:'first-use-fail'},{label:'FU Success',name:'first-use-success'},
+  {label:'Input Detected',name:'input-detected'},{label:'Voice Start',name:'voicestart'},
+  {label:'Voice Confirm',name:'voiceconfirm'},{label:'Voice Cancel',name:'voicecancel'},{label:'Loading',name:'loading'}
+];
+document.getElementById('pcmBtn').onclick = ()=>{
+  setupDialogButtons('pcmButtons', pcmSounds.map(s=>({label:s.label, onclick:'ssap://com.webos.audio/systemsounds/playFeedback', params:{play:true, sink:'pfeedback', name:s.name}})));
+  openWidget('pcmDialog', {rightOffset:280, topOffset:10});
+};
+
+/* TVHotkey */
+const tvHotkeyButtons=[
+  {label:'Home',key:'HOME'},{label:'FullHome',key:'FULL_HOME'},
+  {label:'Energy Saving',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'energy-saving-mode'}}},
+  {label:'Aspect Ratio',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'aspect-ratio'}}},
+  {label:'Store Mode',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'store-mode'}}},
+  {label:'Soccer Mode',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'soccer-mode'}}},
+  {label:'Sleep Timer',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'sleep'}}},
+  {label:'Subtitle',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'subtitle'}}},
+  {label:'SIMPLINK',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'simplink'}}},
+  {label:'3D Mode',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'3d-mode'}}},
+  {label:'One Local Key',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'one-local-key'}}},
+  {label:'Local Key Menu',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'local-key'}}},
+  {label:'Multi Audio',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'multi-sound-setting'}}},
+  {label:'Audio Description',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'audio-description'}}},
+  {label:'Screenshot',onclick:'luna://org.webosbrew.hbchannel.service/exec',params:{command:'/media/developer/apps/usr/palm/applications/org.set.app/screenshot-flow.sh'}}
+];
+document.getElementById('tvHotkeyMenuBtn').onclick = ()=>{
+  setupDialogButtons('tvHotkeyButtons', tvHotkeyButtons);
+  openWidget('tvHotkeyDialog', {leftOffset:280, topOffset:12});
+};
+
+/* Other menu */
+const otherButtons=[
+  {label:'BeanBrowser',onclick:'ssap://com.webos.applicationManager/launch',params:{id:'com.webos.app.beanbrowser',params:{contentTarget:'https://m.youtube.com',ui:['Exit'],x:100,y:350,width:500,height:700,overlay:true}}},
+  {label:'Web Browser',onclick:'ssap://com.webos.applicationManager/launch',params:{id:'com.webos.app.browser'}},
+  {label:'Web App',onclick:'ssap://com.webos.applicationManager/launch',params:{id:'com.webos.app.webapphost'}},
+  {label:'Watch a Video',onclick:'ssap://com.webos.applicationManager/launch',params:{id:'com.webos.app.photovideo',params:{payload:[{fullPath:'/media/developer/apps/usr/palm/applications/com.m12c.tvhotkeymenu/aww.mp4',mediaType:'VIDEO',fileName:'Chickadee',thumbnail:'/usr/palm/applications/com.webos.app.cheeringtv/areaWhite.png',lastPlayPosition:-1}]}}},
+  {label:'Play a Sound',onclick:'ssap://com.webos.applicationManager/launch',params:{id:'com.webos.app.music',params:{payload:[{fullPath:'/usr/palm/applications/com.webos.app.cheeringtv/assets/sounds/mono/fireworks.wav',mediaType:'MUSIC',deviceType:'DMR',fileName:'fireworks',thumbnail:'/usr/palm/applications/com.webos.app.cheeringtv/areaWhite.png',subtitle:'',lastPlayPosition:-1,album:'',artist:''}]}}}
+];
+document.getElementById('otherMenuBtn').onclick = ()=>{
+  setupDialogButtons('otherButtons', otherButtons);
+  openWidget('otherDialog', {leftOffset:280, topOffset:180});
+};
+
+/* openWidget tries to place widget near main controls without covering center */
+function openWidget(id, opts){
+  const w = document.getElementById(id);
+  w.style.display = 'block';
+  // position: try offsets, otherwise near center-right
+  if(opts && opts.leftOffset !== undefined) { w.style.left = opts.leftOffset + 'px'; w.style.top = (opts.topOffset || 12) + 'px'; }
+  else if(opts && opts.rightOffset !== undefined){ w.style.right = opts.rightOffset + 'px'; w.style.top = (opts.topOffset || 12) + 'px'; }
+  else { w.style.right = '12px'; w.style.top = '12px'; }
+  // ensure left/top computed for drag system
+  setTimeout(()=>{ const rect = w.getBoundingClientRect(); w.style.left = (rect.left) + 'px'; w.style.top = (rect.top) + 'px'; w.style.right='auto'; }, 25);
+}
+
+/* close buttons */
+document.getElementById('closePcm').onclick = ()=> document.getElementById('pcmDialog').style.display='none';
+document.getElementById('closeHotkey').onclick = ()=> document.getElementById('tvHotkeyDialog').style.display='none';
+document.getElementById('closeOther').onclick = ()=> document.getElementById('otherDialog').style.display='none';
+document.getElementById('minMain').onclick = ()=> { const m = document.getElementById('mainControls'); m.style.display = (m.style.display==='none') ? 'block':'none'; }
+document.getElementById('minVol').onclick = ()=> { const m = document.querySelector('#volumeUI .controls'); m.style.display = (m.style.display==='none') ? 'block':'none'; }
+
+/* --------------------------
+   Keyboard navigation across open widgets
+   - ArrowUp/Down to move focus inside widget
+   - Enter to activate focused button
+   - Escape to close widget
+   --------------------------*/
+document.addEventListener('keydown', (e)=>{
+  const widgetIds = ['pcmDialog','tvHotkeyDialog','otherDialog','mainUI','volumeUI'];
+  for(const id of widgetIds){
+    const w = document.getElementById(id);
+    if(w && w.style.display!=='none'){
+      const btns = w.querySelectorAll('button');
+      if(!btns || btns.length===0) continue;
+      if(!selectedBtn || !Array.from(btns).includes(selectedBtn)) selectedBtn = btns[0];
+      if(e.key === 'ArrowDown'){ e.preventDefault(); focusNext(btns); break; }
+      if(e.key === 'ArrowUp'){ e.preventDefault(); focusPrev(btns); break; }
+      if(e.key === 'Enter'){ e.preventDefault(); selectedBtn.click(); break; }
+      if(e.key === 'Escape'){ if(w.classList.contains('dialog') || id==='mainUI' || id==='volumeUI'){ w.style.display='none'; selectedBtn=null; } break; }
+    }
+  }
+});
+function focusNext(btns){ let i=[...btns].indexOf(selectedBtn); i=(i+1)%btns.length; selectedBtn=btns[i]; selectedBtn.focus(); }
+function focusPrev(btns){ let i=[...btns].indexOf(selectedBtn); i=(i-1+btns.length)%btns.length; selectedBtn=btns[i]; selectedBtn.focus(); }
+
+/* initialize UI values and buttons */
+updateVolUI();
+setupDialogButtons('pcmButtons', pcmSounds.map(s=>({label:s.label, onclick:'ssap://com.webos.audio/systemsounds/playFeedback', params:{play:true,sink:'pfeedback',name:s.name}})));
+setupDialogButtons('tvHotkeyButtons', tvHotkeyButtons);
+setupDialogButtons('otherButtons', otherButtons);
+
+/* expose small API for debugging */
+window.__app = { sendReq, launchApp, volumeUp, volumeDown, toggleMute };
+
+/* ensure widgets initial positions translate to left/top for dragging */
+window.addEventListener('load', ()=> {
+  document.querySelectorAll('[data-widget]').forEach(w=>{
+    const rect = w.getBoundingClientRect();
+    // if positioned with right/transform, convert to left/top for consistent dragging
+    if(!w.style.left && (w.style.right || w.style.transform)){
+      w.style.left = rect.left + 'px';
+      w.style.top  = rect.top + 'px';
+      w.style.right = 'auto';
+      w.style.transform = 'none';
+    }
+  });
+});
+</script>
+
+
+
 </body>
 </html>
