@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>webOS Launcher + Menus (Recode)</title>
+<style>
+:root{ --bg:#0b0b0b; --panel:#121212; --panel-2:#181818; --muted:#9aa0a6; --accent:#dcdcdc }
+html,body{height:100%;margin:0;background:var(--bg);color:#fff;font-family:Arial, sans-serif;overflow:hidden}
+.widget{position:absolute;min-width:200px;max-width:360px;background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid rgba(255,255,255,.06);border-radius:10px;box-shadow:0 8px 20px rgba(0,0,0,.6);padding:8px;user-select:none;}
+.widget .title{display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:grab;}
+.widget .title h1{margin:6px 0;font-size:16px;color:var(--accent);text-shadow:0 0 4px #000}
+.widget .controls{margin-top:8px}
+.btn{display:block;width:100%;margin:6px 0;padding:10px;background:linear-gradient(#303030,#1a1a1a);border:2px solid #555;border-radius:10px;color:#fff;font-weight:700;cursor:pointer;box-shadow:0 4px 6px rgba(0,0,0,.6);text-align:left}
+.btn.small{padding:6px;font-size:13px;border-radius:8px}
+.btn:hover{background:linear-gradient(#444,#222);border-color:#888}
+.muted{opacity:.8;font-size:12px}
+#mainUI{left:12px;top:12px;width:260px}
+#volumeUI{right:12px;top:40%;width:220px;transform:translateY(-50%)}
+.dialog{display:none;z-index:99;min-width:240px}
+#log{position:absolute;top:50px;right:50px;width:300px;height:200px;background:rgba(0,0,0,0.85);border:2px solid #555;border-radius:10px;padding:6px;overflow:auto;resize:both;cursor:move;z-index:100;}
+.title .actions{display:flex;gap:6px;align-items:center}
+.icon{width:26px;height:26px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;background:rgba(255,255,255,.02);color:var(--muted);font-weight:700}
+.icon:hover{background:rgba(255,255,255,.04)}
+button:focus{outline:2px solid rgba(200,200,255,.08);outline-offset:2px}
+@media(max-width:720px){ #mainUI{left:8px;top:8px;width:46vw} #volumeUI{right:8px;top:35%} }
+#inputsUI{position:absolute;top:10%;right:20px;width:260px;background:rgba(20,20,20,0.9);padding:10px;border-radius:12px;box-shadow:0 4px 8px rgba(0,0,0,.6);}
+.input-row{display:flex;flex-wrap:wrap;margin-bottom:5px;}
+.input-btn{flex:1 1 48%;margin:2px;padding:8px;background:linear-gradient(#303030,#1a1a1a);border:2px solid #555;border-radius:10px;color:#fff;font-weight:bold;cursor:pointer;text-align:center;}
+.input-btn:hover{background:linear-gradient(#444,#222);border-color:#888;}
+.dragHandle{cursor:move;font-weight:bold;margin-bottom:6px;}
+</style>
+</head>
+<body>
+
+<!-- MAIN LAUNCHER -->
+<div id="mainUI" class="widget" data-widget>
+  <div class="title" data-drag-handle>
+    <h1>📺 Launcher</h1>
+    <div class="actions">
+      <div class="icon" title="Drag">☰</div>
+      <div class="icon" id="minMain" title="Hide">–</div>
+    </div>
+  </div>
+  <div class="controls" id="mainControls">
+    <button class="btn" onclick="launchApp('com.webos.app.browser')">Web Browser</button>
+    <button class="btn" onclick="launchApp('com.webos.app.cheeringtv')">Cheering TV</button>
+    <button class="btn" onclick="launchApp('com.palm.app.settings')">Settings</button>
+    <button class="btn" onclick="launchApp('com.webos.app.installation')">Secret Menu</button>
+    <button class="btn" onclick="launchApp('com.webos.app.discovery')">LG Store</button>
+    <h1 style="font-size:14px;margin:6px 0 4px">🎮 TV Controls <small class="muted">(data-key)</small></h1>
+    <button class="btn small" data-key="FRONTKEY_INPUT_SELECT" onclick="sendKey(this)">Input</button>
+    <button class="btn small" data-key="MENU" onclick="sendKey(this)">Quick Settings</button>
+    <button class="btn small" data-key="PAIRING_M4" onclick="sendKey(this)">LG Magic Remote Pair</button>
+    <h1 style="font-size:14px;margin:6px 0 4px">🎛️ Menus</h1>
+    <button class="btn" id="pcmBtn">PCM Sounds</button>
+    <button class="btn" id="tvHotkeyMenuBtn">TVHotkey Menu</button>
+    <button class="btn" id="otherMenuBtn">Other Menu</button>
+  </div>
+</div>
+
+<!-- VOLUME -->
+<div id="volumeUI" class="widget" data-widget>
+  <div class="title" data-drag-handle>
+    <h1>🔊 Volume</h1>
+    <div class="actions"><div class="icon" id="minVol">–</div></div>
+  </div>
+  <div class="controls">
+    <button class="btn" onclick="volumeUp()">Volume Up</button>
+    <button class="btn" onclick="volumeDown()">Volume Down</button>
+    <button class="btn" onclick="toggleMute()">Mute</button>
+    <div class="muted" style="margin-top:8px">Current: <span id="volVal">10</span> -- Muted: <span id="muteVal">false</span></div>
+    <input type="number" id="volumeInput" placeholder="Enter number" class="btn" style="width:120px;display:inline-block;margin:5px 5px 5px 0;">
+    <button class="btn" style="width:80px;display:inline-block;" onclick="setVolumeFromInput()">Set</button>
+  </div>
+</div>
+
+<!-- INPUTS -->
+<div id="inputsUI">
+  <div class="dragHandle">🎛️ Inputs</div>
+  <div class="input-row">
+    <button class="input-btn" data-src="ext://hdmi:1">HDMI 1</button>
+    <button class="input-btn" data-src="ext://hdmi:2">HDMI 2</button>
+  </div>
+</div>
+
+<video id="fullScreenVideo" autoplay style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:999;"></video>
+
+<!-- DIALOG WIDGETS -->
+<div id="pcmDialog" class="widget dialog"><div class="title" data-drag-handle><h1>PCM Sounds</h1><div class="actions"><div class="icon" id="closePcm">✕</div></div></div><div class="controls" id="pcmButtons"></div></div>
+<div id="tvHotkeyDialog" class="widget dialog"><div class="title" data-drag-handle><h1>TVHotkey Menu</h1><div class="actions"><div class="icon" id="closeHotkey">✕</div></div></div><div class="controls" id="tvHotkeyButtons"></div></div>
+<div id="otherDialog" class="widget dialog"><div class="title" data-drag-handle><h1>Other Menu</h1><div class="actions"><div class="icon" id="closeOther">✕</div></div></div><div class="controls" id="otherButtons"></div></div>
+
+<!-- LOG -->
+<pre id="log"></pre>
+
+<script>
+// CORE
+let client, currentVolume=10, isMuted=false;
+function logMsg(m){ const L=document.getElementById('log'); L.textContent='['+new Date().toLocaleTimeString()+'] '+m+'\n'+L.textContent; if(L.textContent.length>20000) L.textContent=L.textContent.slice(0,20000); }
+function setVolumeFromInput(){ const val=parseInt(document.getElementById('volumeInput').value); if(!isNaN(val)){ currentVolume=Math.max(0,Math.min(100,val)); sendReq('ssap://audio/setVolume',{volume:currentVolume}); updateVolUI(); } }
+function updateVolUI(){ document.getElementById('volVal').textContent=currentVolume; document.getElementById('muteVal').textContent=isMuted; logMsg('Volume '+currentVolume+(isMuted?' (muted)':'')); }
+function openWidget(id,pos={}){ const w=document.getElementById(id); w.style.display='block'; if(pos.leftOffset) w.style.left=pos.leftOffset+'px'; if(pos.rightOffset) w.style.right=pos.rightOffset+'px'; if(pos.topOffset) w.style.top=pos.topOffset+'px'; }
+// Draggable generic
+function makeDraggable(el){ const handle=el.querySelector('.dragHandle')||el; let down=false,ox,oy; handle.onmousedown=e=>{down=true;ox=e.clientX-el.offsetLeft;oy=e.clientY-el.offsetTop;document.body.style.userSelect='none';}; document.onmouseup=()=>{down=false;document.body.style.userSelect='auto';}; document.onmousemove=e=>{if(!down)return; el.style.left=(e.clientX-ox)+'px'; el.style.top=(e.clientY-oy)+'px';}; }
+document.querySelectorAll('[data-widget]').forEach(w=>makeDraggable(w));
+makeDraggable(document.getElementById('log'));
+makeDraggable(document.getElementById('inputsUI'));
+
+// PCM
+const pcmSounds=[{label:'Power On',name:'power-on'},{label:'Power Off',name:'power-off'},{label:'Welcome',name:'welcome'}];
+document.getElementById('pcmBtn').onclick=()=>{ const c=document.getElementById('pcmButtons'); c.innerHTML=''; pcmSounds.forEach(s=>{ const b=document.createElement('button'); b.className='btn small'; b.textContent=s.label; b.onclick=()=>logMsg('PCM '+s.name); c.appendChild(b); }); openWidget('pcmDialog',{rightOffset:280,topOffset:10}); };
+// TVHotkey
+document.getElementById('tvHotkeyMenuBtn').onclick=()=>{ const arr=[{label:'Home',key:'HOME'},{label:'FullHome',key:'FULL_HOME'}]; const c=document.getElementById('tvHotkeyButtons'); c.innerHTML=''; arr.forEach(o=>{ const b=document.createElement('button'); b.className='btn small'; b.textContent=o.label; b.onclick=()=>logMsg('TVHotkey '+(o.key||o.label)); c.appendChild(b); }); openWidget('tvHotkeyDialog',{leftOffset:280,topOffset:12}); };
+
+// volume actions
+function volumeUp(){ currentVolume=Math.min(100,currentVolume+1); updateVolUI(); }
+function volumeDown(){ currentVolume=Math.max(0,currentVolume-1); updateVolUI(); }
+function toggleMute(){ isMuted=!isMuted; updateVolUI(); }
+
+// input buttons
+document.querySelectorAll('#inputsUI .input-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{ const v=document.getElementById('fullScreenVideo'); v.src=btn.dataset.src; v.style.display='block'; v.play(); });
+});
+document.addEventListener('keydown',e=>{const v=document.getElementById('fullScreenVideo'); if(v.style.display==='block'&&(e.key==='Escape'||e.key==='Backspace')){v.pause();v.style.display='none';v.src='';}});
+document.getElementById('fullScreenVideo').addEventListener('click',()=>{ const v=document.getElementById('fullScreenVideo'); v.pause();v.style.display='none';v.src=''; });
+</script>
+
+</body>
+</html>
