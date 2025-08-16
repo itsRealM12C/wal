@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+  <body>
+    <pre id="log"></pre>
+
+    <!-- external scripts -->
+    <script src="wsproxy.js"></script>
+    <script src="client.js"></script>
+
+    <script>
+      function log(msg) {
+        const l = document.querySelector("#log");
+        l.innerText =
+          "[" + new Date().toLocaleTimeString() + "] " + msg + "\n" + l.innerText;
+      }
+
+      async function launchBrowser() {
+        try {
+          const target = "127.0.0.1";
+          log("connecting to " + target + "...");
+          const client = new SSAPClient(
+            target,
+            window.localStorage["client-key-" + target]
+          );
+          await client.connect();
+
+          log("registering...");
+          window.localStorage["client-key-" + target] = await client.register();
+
+          log("registered, launching...");
+          await client.request({
+            uri: "ssap://system.launcher/launch",
+            payload: {
+              id: "com.webos.app.browser",
+              params: {
+                target: "https://play.geforcenow.com/mall/index.html",
+                pwaMode: true,
+                nonUiMode: true,
+                nrcuMode: false,
+                backgroundClose: "false"
+              },
+              noSplash: true
+            }
+          });
+
+          log("launch request sent.");
+        } catch (e) {
+          console.error(e);
+          log("failed: " + e);
+        }
+      }
+
+      // Trigger when pressing Enter key on remote / keyboard
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          launchBrowser();
+        }
+      });
+    </script>
+  </body>
+</html>
