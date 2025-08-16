@@ -1,104 +1,236 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="utf-8" />
-  <title>webOS Toast Generator</title>
-  <style>
-    body {
-      background: #0b0b0b;
-      color: white;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 20px;
-    }
-    h1 { font-size: 22px; margin-bottom: 20px; }
-    .form-box { margin: 20px auto; max-width: 400px; text-align: left; }
-    label { display: block; margin-top: 10px; font-size: 14px; }
-    input[type="text"] {
-      width: 100%; padding: 8px; border-radius: 6px;
-      border: 1px solid #555; background: #222; color: white;
-    }
-    .btn {
-      display: block; margin: 20px auto; padding: 12px;
-      background: #333; border: 2px solid #666;
-      border-radius: 8px; color: white; font-size: 16px; cursor: pointer;
-    }
-    .btn:hover { background: #444; border-color: #888; }
-    #log {
-      margin-top: 20px; font-size: 13px; background: #111;
-      padding: 10px; border-radius: 8px; max-width: 600px; margin-left: auto; margin-right: auto;
-      color: #aaa; text-align: left; white-space: pre-wrap;
-    }
-  </style>
-</head>
-<body>
-  <h1>🍞 Toast Generator (webOS)</h1>
-  <div class="form-box">
-    <label>Message:</label>
-    <input type="text" id="toastMsg" placeholder="Enter toast message" />
-
-    <label>Icon URL:</label>
-    <input type="text" id="toastIcon" placeholder="/usr/palm/applications/com.webos.app.notificationcenter/icon_notification.png" />
-
-    <label><input type="checkbox" id="toastOnclick" onchange="toggleOnclickField()" /> Add OnClick (open link)</label>
-    <div id="onclickField" style="display:none;">
-      <label>OnClick URL:</label>
-      <input type="text" id="toastLink" placeholder="https://example.com" />
-    </div>
-
-    <button class="btn" onclick="generateToast()">Generate Toast</button>
-  </div>
-
-  <pre id="log"></pre>
-
-  <script src="https://dropbox.inf.re/webos-gfn/wsproxy.js"></script>
-  <script src="https://dropbox.inf.re/webos-gfn/client.js"></script>
-
-  <script>
-    let client;
-
-    function log(msg) {
-      const l = document.querySelector("#log");
-      l.innerText = "[" + new Date().toLocaleTimeString() + "] " + msg + "\n" + l.innerText;
-    }
-
-    async function initClient() {
-      const target = "127.0.0.1";
-      client = new SSAPClient(target, window.localStorage["client-key-" + target]);
-      await client.connect();
-      window.localStorage["client-key-" + target] = await client.register();
-    }
-
-    function toggleOnclickField() {
-      document.getElementById("onclickField").style.display =
-        document.getElementById("toastOnclick").checked ? "block" : "none";
-    }
-
-    async function generateToast() {
-      if (!client) await initClient();
-
-      const msg = document.getElementById("toastMsg").value || "Hello from webOS!";
-      const icon = document.getElementById("toastIcon").value || "";
-      const addOnclick = document.getElementById("toastOnclick").checked;
-      const link = document.getElementById("toastLink").value || "https://www.google.com";
-
-      let payload = { message: msg };
-      if (icon) payload.iconUrl = icon;
-      if (addOnclick) {
-        payload.noaction = false;
-        payload.onclick = {
-          appId: "com.webos.app.browser",
-          params: { target: link }
-        };
+  <head>
+    <meta charset="utf-8" />
+    <title>webOS Launcher + Generators</title>
+    <style>
+      body {
+        background: #0b0b0b;
+        font-family: Arial, sans-serif;
+        color: white;
+        text-align: center;
+        margin: 0;
+        padding: 20px;
       }
 
-      await client.request({
-        uri: "ssap://system.notifications/createToast",
-        payload
-      });
+      h1 {
+        font-size: 22px;
+        margin: 20px 0 10px;
+        color: #dcdcdc;
+        text-shadow: 0 0 4px #000;
+      }
 
-      log("Toast sent:\n" + JSON.stringify(payload, null, 2));
-    }
-  </script>
-</body>
+      .btn {
+        display: block;
+        width: 260px;
+        margin: 12px auto;
+        padding: 14px;
+        background: linear-gradient(#303030, #1a1a1a);
+        border: 2px solid #555;
+        border-radius: 12px;
+        color: white;
+        font-size: 18px;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.6);
+      }
+      .btn:hover {
+        background: linear-gradient(#444, #222);
+        border-color: #888;
+      }
+
+      .form-box {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 15px;
+        margin: 15px auto;
+        border-radius: 8px;
+        max-width: 500px;
+        text-align: left;
+      }
+      .form-box label {
+        display: block;
+        margin-top: 10px;
+        font-size: 14px;
+        color: #ccc;
+      }
+      .form-box input[type="text"] {
+        width: 100%;
+        padding: 8px;
+        margin-top: 5px;
+        border-radius: 6px;
+        border: 1px solid #444;
+        background: #222;
+        color: white;
+      }
+
+      #log {
+        margin-top: 25px;
+        font-size: 14px;
+        color: #9a9a9a;
+        text-align: left;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 10px;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>📺 LG webOS Launcher</h1>
+
+    <button class="btn" onclick="launchApp('com.webos.app.browser')">Web Browser</button>
+    <button class="btn" onclick="launchApp('com.webos.app.cheeringtv')">Cheering TV</button>
+    <button class="btn" onclick="launchApp('com.palm.app.settings')">Settings</button>
+    <button class="btn" onclick="launchApp('com.webos.app.installation')">Secret Menu</button>
+    <button class="btn" onclick="launchApp('com.webos.app.discovery')">LG Content Store</button>
+
+    <h1>🔊 Volume Controls</h1>
+    <button class="btn" onclick="volumeUp()">Volume Up</button>
+    <button class="btn" onclick="volumeDown()">Volume Down</button>
+    <button class="btn" onclick="toggleMute()">Mute / Unmute</button>
+
+    <h1>🍞 Toast Generator</h1>
+    <div class="form-box">
+      <label>Message:</label>
+      <input type="text" id="toastMsg" placeholder="Enter toast message" />
+
+      <label>Icon URL:</label>
+      <input type="text" id="toastIcon" placeholder="/usr/palm/applications/com.webos.app.notificationcenter/icon_notification.png" />
+
+      <label><input type="checkbox" id="toastOnclick" /> Add OnClick (Open Browser)</label>
+
+      <button class="btn" onclick="generateToast()">Generate Toast</button>
+    </div>
+
+    <h1>⚠️ Alert Generator</h1>
+    <div class="form-box">
+      <label>Title:</label>
+      <input type="text" id="alertTitle" placeholder="Enter alert title" />
+
+      <label>Message:</label>
+      <input type="text" id="alertMessage" placeholder="Enter alert message" />
+
+      <label>Buttons (comma-separated):</label>
+      <input type="text" id="alertButtons" placeholder="OK, Cancel" />
+
+      <button class="btn" onclick="generateAlert()">Generate Alert</button>
+    </div>
+
+    <pre id="log"></pre>
+
+    <script src="https://dropbox.inf.re/webos-gfn/wsproxy.js"></script>
+    <script src="https://dropbox.inf.re/webos-gfn/client.js"></script>
+
+    <script>
+      let client;
+      let currentVolume = 10;
+      let isMuted = false;
+
+      function log(msg) {
+        const l = document.querySelector("#log");
+        l.innerText =
+          "[" + new Date().toLocaleTimeString() + "] " + msg + "\n" + l.innerText;
+      }
+
+      async function initClient() {
+        const target = "127.0.0.1";
+        log("connecting to " + target + "...");
+        client = new SSAPClient(target, window.localStorage["client-key-" + target]);
+        await client.connect();
+        log("registering...");
+        window.localStorage["client-key-" + target] = await client.register();
+      }
+
+      async function launchApp(appId) {
+        try {
+          if (!client) await initClient();
+          await client.request({
+            uri: "ssap://system.launcher/launch",
+            payload: { id: appId }
+          });
+          log("Launched: " + appId);
+        } catch (e) {
+          log("failed: " + e);
+        }
+      }
+
+      async function volumeUp() {
+        if (!client) await initClient();
+        currentVolume++;
+        await client.request({
+          uri: "ssap://audio/setVolume",
+          payload: { volume: currentVolume }
+        });
+        log("Volume set to " + currentVolume);
+      }
+
+      async function volumeDown() {
+        if (!client) await initClient();
+        currentVolume = Math.max(0, currentVolume - 1);
+        await client.request({
+          uri: "ssap://audio/setVolume",
+          payload: { volume: currentVolume }
+        });
+        log("Volume set to " + currentVolume);
+      }
+
+      async function toggleMute() {
+        if (!client) await initClient();
+        isMuted = !isMuted;
+        await client.request({
+          uri: "ssap://audio/setMute",
+          payload: { mute: isMuted }
+        });
+        log("Mute: " + isMuted);
+      }
+
+      // === Toast Generator ===
+      async function generateToast() {
+        if (!client) await initClient();
+        const msg = document.getElementById("toastMsg").value || "Hello from webOS!";
+        const icon = document.getElementById("toastIcon").value || "";
+        const addOnclick = document.getElementById("toastOnclick").checked;
+
+        let payload = { message: msg };
+        if (icon) payload.iconUrl = icon;
+        if (addOnclick) {
+          payload.noaction = false;
+          payload.onclick = {
+            appId: "com.webos.app.browser",
+            params: { target: "https://inputrunner.github.io/simple_index.html" }
+          };
+        }
+
+        await client.request({
+          uri: "ssap://system.notifications/createToast",
+          payload
+        });
+        log("Toast sent: " + JSON.stringify(payload));
+      }
+
+      // === Alert Generator ===
+      async function generateAlert() {
+        if (!client) await initClient();
+        const title = document.getElementById("alertTitle").value || "Alert";
+        const message = document.getElementById("alertMessage").value || "This is a test alert.";
+        const btns = document.getElementById("alertButtons").value.split(",").map(b => b.trim());
+
+        const buttons = btns.map(label => ({ label }));
+
+        const payload = {
+          title,
+          message,
+          buttons
+        };
+
+        await client.request({
+          uri: "ssap://system.notifications/createAlert",
+          payload
+        });
+        log("Alert sent: " + JSON.stringify(payload));
+      }
+    </script>
+  </body>
 </html>
