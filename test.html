@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>webOS Launcher + Generators</title>
+<style>
+body{background:#0b0b0b;font-family:Arial,sans-serif;color:white;text-align:center;margin:0;padding:20px}
+h1{font-size:22px;margin:20px 0 10px;color:#dcdcdc;text-shadow:0 0 4px #000}
+.btn{display:block;width:260px;margin:12px auto;padding:14px;background:linear-gradient(#303030,#1a1a1a);border:2px solid #555;border-radius:12px;color:white;font-size:18px;font-weight:bold;cursor:pointer;box-shadow:0 4px 6px rgba(0,0,0,0.6)}
+.btn:hover{background:linear-gradient(#444,#222);border-color:#888}
+.form-box{background:rgba(255,255,255,.05);padding:15px;margin:15px auto;border-radius:8px;max-width:500px;text-align:left}
+.form-box label{display:block;margin-top:10px;font-size:14px;color:#ccc}
+.form-box input[type="text"],.form-box input[type="number"]{width:100%;padding:8px;margin-top:5px;border-radius:6px;border:1px solid #444;background:#222;color:white}
+.dialog{position:absolute;background:rgba(0,0,0,.85);padding:10px;border-radius:10px;display:none;min-width:240px;z-index:99;cursor:move}
+.dialog h2{margin:0 0 6px;color:#dcdcdc;font-size:18px}
+.dialog .close-btn{cursor:pointer;color:#f55;text-align:right;margin-top:6px}
+#logWidget{position:fixed;bottom:10px;right:10px;width:320px;max-height:300px;overflow:auto;background:rgba(0,0,0,.8);padding:10px;font-size:12px;color:#9a9a9a;border-radius:8px;cursor:move;z-index:999}
+</style>
+</head>
+<body>
+<h1>📺 LG webOS Launcher</h1>
+
+<button class="btn" onclick="launchApp('com.webos.app.browser')">Web Browser</button>
+<button class="btn" onclick="launchApp('com.webos.app.cheeringtv')">Cheering TV</button>
+<button class="btn" onclick="launchApp('com.palm.app.settings')">Settings</button>
+<button class="btn" onclick="launchApp('com.webos.app.installation')">Secret Menu</button>
+<button class="btn" onclick="launchApp('com.webos.app.discovery')">LG Content Store</button>
+
+<h1>🔊 Volume Controls</h1>
+<div class="form-box">
+  <button class="btn" onclick="volumeUp()">Volume Up</button>
+  <button class="btn" onclick="volumeDown()">Volume Down</button>
+  <button class="btn" onclick="toggleMute()">Mute / Unmute</button>
+  <label>Set Volume:</label>
+  <input type="number" id="volumeInput" value="10"/>
+  <button class="btn" onclick="setVolumeFromInput()">Set Volume</button>
+</div>
+
+<h1>🍞 Toast Generator</h1>
+<div class="form-box">
+<label>Message:</label>
+<input type="text" id="toastMsg" placeholder="Enter toast message"/>
+<label>Icon URL:</label>
+<input type="text" id="toastIcon" placeholder="/usr/palm/applications/com.webos.app.notificationcenter/icon_notification.png"/>
+<label><input type="checkbox" id="toastOnclick"/> Add OnClick (Open Browser)</label>
+<button class="btn" onclick="generateToast()">Generate Toast</button>
+</div>
+
+<h1>⚠️ Alert Generator</h1>
+<div class="form-box">
+<label>Title:</label>
+<input type="text" id="alertTitle" placeholder="Enter alert title"/>
+<label>Message:</label>
+<input type="text" id="alertMessage" placeholder="Enter alert message"/>
+<label>Buttons (comma-separated):</label>
+<input type="text" id="alertButtons" placeholder="OK, Cancel"/>
+<button class="btn" onclick="generateAlert()">Generate Alert</button>
+</div>
+
+<h1>🎛️ Menus</h1>
+<button class="btn" id="pcmBtn">PCM Sounds</button>
+<button class="btn" id="tvHotkeyBtn">TVHotkey Menu</button>
+<button class="btn" id="otherMenuBtn">Other Menu</button>
+
+<!-- Dialogs -->
+<div class="dialog" id="pcmDialog"><h2>PCM Sounds</h2><div id="pcmButtons"></div><div class="close-btn" onclick="closeDialog('pcmDialog')">✕ Close</div></div>
+<div class="dialog" id="tvHotkeyDialog"><h2>TVHotkey Menu</h2><div id="tvHotkeyButtons"></div><div class="close-btn" onclick="closeDialog('tvHotkeyDialog')">✕ Close</div></div>
+<div class="dialog" id="otherDialog"><h2>Other Menu</h2><div id="otherButtons"></div><div class="close-btn" onclick="closeDialog('otherDialog')">✕ Close</div></div>
+
+<div id="logWidget"><h2>Log</h2><pre id="log"></pre></div>
+
+<script src="https://dropbox.inf.re/webos-gfn/wsproxy.js"></script>
+<script src="https://dropbox.inf.re/webos-gfn/client.js"></script>
+<script>
+let client,currentVolume=10,isMuted=false;
+
+function log(m){const L=document.getElementById('log');L.textContent='['+new Date().toLocaleTimeString()+'] '+m+'\n'+L.textContent}
+
+async function initClient(){if(client)return;client=new SSAPClient('127.0.0.1',localStorage['client-key-127.0.0.1']);await client.connect();localStorage['client-key-127.0.0.1']=await client.register();}
+
+async function launchApp(id){if(!client)await initClient();await client.request({uri:'ssap://system.launcher/launch',payload:{id}});log('Launched: '+id);}
+async function volumeUp(){currentVolume++;if(!client)await initClient();await client.request({uri:'ssap://audio/setVolume',payload:{volume:currentVolume}});log('Volume set to '+currentVolume);}
+async function volumeDown(){currentVolume=Math.max(-100,currentVolume-1);if(!client)await initClient();await client.request({uri:'ssap://audio/setVolume',payload:{volume:currentVolume}});log('Volume set to '+currentVolume);}
+async function toggleMute(){isMuted=!isMuted;if(!client)await initClient();await client.request({uri:'ssap://audio/setMute',payload:{mute:isMuted}});log('Mute: '+isMuted);}
+async function setVolumeFromInput(){let v=parseInt(document.getElementById('volumeInput').value);if(isNaN(v))return;currentVolume=v;if(!client)await initClient();await client.request({uri:'ssap://audio/setVolume',payload:{volume:currentVolume}});log('Volume set to '+currentVolume);}
+
+/* Toast / Alert */
+async function generateToast(){if(!client)await initClient();const msg=document.getElementById('toastMsg').value||'Hello!';const icon=document.getElementById('toastIcon').value||'';const addOn=document.getElementById('toastOnclick').checked;let payload={message:msg};if(icon)payload.iconUrl=icon;if(addOn)payload.onclick={appId:'com.webos.app.browser',params:{target:'https://inputrunner.github.io/simple_index.html'}};await client.request({uri:'ssap://system.notifications/createToast',payload});log('Toast sent: '+JSON.stringify(payload));}
+
+async function generateAlert(){if(!client)await initClient();const title=document.getElementById('alertTitle').value||'Alert';const message=document.getElementById('alertMessage').value||'This is a test alert';const btns=document.getElementById('alertButtons').value.split(',').map(b=>b.trim());const payload={title,message,buttons:btns.map(l=>({label:l}))};await client.request({uri:'ssap://system.notifications/createAlert',payload});log('Alert sent: '+JSON.stringify(payload));}
+
+/* ----- Dialog helpers ----- */
+function closeDialog(id){document.getElementById(id).style.display='none'}
+function makeDraggable(el){let posX=0,posY=0,mouseX=0,mouseY=0;el.onmousedown=function(e){mouseX=e.clientX;mouseY=e.clientY;document.onmousemove=drag;document.onmouseup=stopDrag};function drag(e){posX=mouseX-e.clientX;posY=mouseY-e.clientY;mouseX=e.clientX;mouseY=e.clientY;el.style.top=(el.offsetTop-posY)+'px';el.style.left=(el.offsetLeft-posX)+'px'}function stopDrag(){document.onmouseup=null;document.onmousemove=null}}
+['pcmDialog','tvHotkeyDialog','otherDialog','logWidget'].forEach(id=>makeDraggable(document.getElementById(id)));
+
+/* PCM Sounds */
+const pcmSounds=[{label:'Power On',name:'power-on'},{label:'Power Off',name:'power-off'},{label:'Welcome',name:'welcome'},{label:'FU Fail',name:'first-use-fail'},{label:'FU Success',name:'first-use-success'},{label:'Input Detected',name:'input-detected'},{label:'Voice Start',name:'voicestart'},{label:'Voice Confirm',name:'voiceconfirm'},{label:'Voice Cancel',name:'voicecancel'},{label:'Loading',name:'loading'}];
+document.getElementById('pcmBtn').onclick=()=>{const c=document.getElementById('pcmButtons');c.innerHTML='';pcmSounds.forEach(s=>{const b=document.createElement('button');b.className='btn';b.textContent=s.label;b.onclick=()=>{if(!client)initClient().then(()=>client.request({uri:'ssap://com.webos.audio/systemsounds/playFeedback',payload:{play:true,sink:'pfeedback',name:s.name}}));else client.request({uri:'ssap://com.webos.audio/systemsounds/playFeedback',payload:{play:true,sink:'pfeedback',name:s.name}})};c.appendChild(b);});document.getElementById('pcmDialog').style.display='block';};
+
+/* TVHotkey */
+const tvHotkeyButtons=[{label:'Home',onclick:'com.webos.app.home'},{label:'Full Home',onclick:'com.webos.app.fullhome'},{label:'Energy Saving',onclick:'com.webos.app.tvhotkey',params:{activateType:'energy-saving-mode'}},{label:'Aspect Ratio',onclick:'com.webos.app.tvhotkey',params:{activateType:'aspect-ratio'}},{label:'Store Mode',onclick:'com.webos.app.tvhotkey',params:{activateType:'store-mode'}},{label:'Soccer Mode',onclick:'com.webos.app.tvhotkey',params:{activateType:'soccer-mode'}},{label:'Sleep Timer',onclick:'com.webos.app.tvhotkey',params:{activateType:'sleep'}},{label:'Subtitle',onclick:'com.webos.app.tvhotkey',params:{activateType:'subtitle'}},{label:'SIMPLINK',onclick:'com.webos.app.tvhotkey',params:{activateType:'simplink'}},{label:'3D Mode',onclick:'com.webos.app.tvhotkey',params:{activateType:'3d-mode'}}];
+document.getElementById('tvHotkeyBtn').onclick=()=>{const c=document.getElementById('tvHotkeyButtons');c.innerHTML='';tvHotkeyButtons.forEach(s=>{const b=document.createElement('button');b.className='btn';b.textContent=s.label;b.onclick=()=>{if(!client)initClient().then(()=>launchApp(s.onclick));else launchApp(s.onclick)};c.appendChild(b);});document.getElementById('tvHotkeyDialog').style.display='block';};
+
+/* Other Menu */
+const otherButtons=[{label:'Web Browser',onclick:'com.webos.app.browser'},{label:'Cheering TV',onclick:'com.webos.app.cheeringtv'},{label:'Settings',onclick:'com.palm.app.settings'}];
+document.getElementById('otherMenuBtn').onclick=()=>{const c=document.getElementById('otherButtons');c.innerHTML='';otherButtons.forEach(s=>{const b=document.createElement('button');b.className='btn';b.textContent=s.label;b.onclick=()=>{if(!client)initClient().then(()=>launchApp(s.onclick));else launchApp(s.onclick)};c.appendChild(b);});document.getElementById('otherDialog').style.display='block';};
+</script>
+</body>
+</html>
