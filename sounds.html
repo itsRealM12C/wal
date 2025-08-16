@@ -3,8 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Volume + PCM</title>
-
-    <script src="wsproxy.js"></script>
+<script src="wsproxy.js"></script>
 <script src="client.js"></script>
 <style>
 body{margin:10px;font-family:Arial,sans-serif;background:#0b0b0b;color:#fff;}
@@ -19,32 +18,48 @@ input{width:60px;padding:4px;margin-right:6px;border-radius:4px;border:1px solid
 <button class="btn" onclick="volumeDown()">Volume -</button>
 <input type="text" id="volInput" placeholder="0">
 <button class="btn" onclick="setVolume()">Set</button>
+<button class="btn" onclick="toggleMute()">Mute</button>
 
 <h1>PCM Sounds</h1>
 <div id="pcmButtons"></div>
-  
+
 <script>
 let currentVolume=10,isMuted=false;
 
-function sendReq(uri,payload={}) {
+// --- Send request to SSAP or webOS Luna ---
+function sendReq(uri,payload={}){
   if(window.webOS && webOS.service){
-    const {service,method}=uri.startsWith('luna://')?{service:uri.split('/')[2],method:uri.split('/').slice(3).join('/')}:{service:'com.webos.audio',method:'setVolume'};
-    webOS.service.request('luna://'+service,{method,payload,onSuccess:()=>console.log('OK '+method),onFailure:e=>console.log('ERR '+JSON.stringify(e))});
+    let service,method;
+    if(uri.startsWith('luna://')){
+      const parts=uri.replace('luna://','').split('/');
+      service=parts[0]; method=parts.slice(1).join('/');
+    }else{
+      const parts=uri.replace('ssap://','').split('/');
+      service=parts[0]; method=parts.slice(1).join('/');
+    }
+    webOS.service.request('luna://'+service,{method,payload,
+      onSuccess:()=>console.log('OK '+method),
+      onFailure:e=>console.log('ERR '+JSON.stringify(e))
+    });
   }else{console.log('REQ',uri,payload);}
 }
 
-// --- Volume ---
+// --- Volume controls ---
 function volumeUp(){currentVolume++; sendReq('ssap://audio/setVolume',{volume:currentVolume}); console.log('Volume',currentVolume);}
 function volumeDown(){currentVolume--; sendReq('ssap://audio/setVolume',{volume:currentVolume}); console.log('Volume',currentVolume);}
-function setVolume(){let val=parseInt(document.getElementById('volInput').value);if(!isNaN(val)){currentVolume=val; sendReq('ssap://audio/setVolume',{volume:currentVolume}); console.log('Volume set to',currentVolume);}}
+function setVolume(){
+  let val=parseInt(document.getElementById('volInput').value);
+  if(!isNaN(val)){currentVolume=val; sendReq('ssap://audio/setVolume',{volume:currentVolume}); console.log('Volume set to',currentVolume);}
+}
+function toggleMute(){isMuted=!isMuted; sendReq('ssap://audio/setMute',{mute:isMuted}); console.log('Mute',isMuted);}
 
 // --- PCM Sounds ---
 const pcmSounds=[
-{label:'Power On',name:'power-on'},{label:'Power Off',name:'power-off'},{label:'Welcome',name:'welcome'},
-{label:'FU Fail',name:'first-use-fail'},{label:'FU Success',name:'first-use-success'},
-{label:'Input Detected',name:'input-detected'},{label:'Voice Start',name:'voicestart'},
-{label:'Voice Confirm',name:'voiceconfirm'},{label:'Voice Cancel',name:'voicecancel'},
-{label:'Loading',name:'loading'}
+  {label:'Power On',name:'power-on'},{label:'Power Off',name:'power-off'},{label:'Welcome',name:'welcome'},
+  {label:'FU Fail',name:'first-use-fail'},{label:'FU Success',name:'first-use-success'},
+  {label:'Input Detected',name:'input-detected'},{label:'Voice Start',name:'voicestart'},
+  {label:'Voice Confirm',name:'voiceconfirm'},{label:'Voice Cancel',name:'voicecancel'},
+  {label:'Loading',name:'loading'}
 ];
 
 const pcmContainer=document.getElementById('pcmButtons');
@@ -58,6 +73,5 @@ pcmSounds.forEach(s=>{
   pcmContainer.appendChild(b);
 });
 </script>
-
 </body>
 </html>
