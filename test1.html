@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>webOS Launcher + Menus</title>
+<style>
+body{margin:0;padding:10px;font-family:Arial,sans-serif;background:#0b0b0b;color:#fff;overflow:hidden}
+#mainUI{position:absolute;top:10px;right:10px;width:260px}
+h1{font-size:20px;color:#dcdcdc;text-shadow:0 0 4px #000;margin:8px 0}
+.btn{display:block;width:100%;margin:4px 0;padding:10px;background:linear-gradient(#303030,#1a1a1a);border:2px solid #555;border-radius:10px;color:#fff;font-weight:bold;cursor:pointer;box-shadow:0 4px 6px rgba(0,0,0,.6)}
+.btn:hover{background:linear-gradient(#444,#222);border-color:#888}
+.dialog{position:absolute;background:rgba(0,0,0,.85);padding:10px;border-radius:10px;display:none;min-width:240px;z-index:99}
+.dialog h2{margin:0 0 6px;color:#dcdcdc;font-size:18px}
+.dialog .close-btn{cursor:pointer;color:#f55;text-align:right;margin-top:6px}
+#pcmDialog{top:10px;right:280px}
+#tvHotkeyDialog{top:300px;right:10px}
+#inputsDialog{top:300px;right:280px}
+#logWidget{position:absolute;bottom:10px;left:10px;width:320px;height:180px;overflow:auto;background:rgba(255,255,255,.05);padding:6px;font-size:12px;color:#9a9a9a;white-space:pre-wrap;cursor:move;z-index:99}
+input[type=number]{width:60px;margin-right:6px;padding:4px;border-radius:4px;border:none}
+</style>
+</head>
+<body>
+<div id="mainUI">
+  <h1>📺 Launcher</h1>
+  <button class="btn" onclick="launchApp('com.webos.app.browser')">Web Browser</button>
+  <button class="btn" onclick="launchApp('com.webos.app.cheeringtv')">Cheering TV</button>
+
+  <div class="section">
+    <h1>🔊 Volume</h1>
+    <div>
+      <input type="number" id="volInput" value="10"/>
+      <button class="btn" onclick="setVolume()">Set</button>
+    </div>
+    <button class="btn" onclick="volumeUp()">Volume Up</button>
+    <button class="btn" onclick="volumeDown()">Volume Down</button>
+    <button class="btn" onclick="toggleMute()">Mute</button>
+  </div>
+
+  <h1>🎛️ Menus</h1>
+  <button class="btn" id="pcmBtn">PCM Sounds</button>
+  <button class="btn" id="tvHotkeyMenuBtn">TVHotkey Menu</button>
+  <button class="btn" id="inputsBtn">Inputs</button>
+</div>
+
+<!-- PCM Dialog -->
+<div class="dialog" id="pcmDialog"><h2>PCM Sounds</h2><div id="pcmButtons"></div><div class="close-btn" onclick="closeDialog('pcmDialog')">✕ Close</div></div>
+
+<!-- TVHotkey Dialog -->
+<div class="dialog" id="tvHotkeyDialog"><h2>TVHotkey Menu</h2><div id="tvHotkeyButtons"></div><div class="close-btn" onclick="closeDialog('tvHotkeyDialog')">✕ Close</div></div>
+
+<!-- Inputs Dialog -->
+<div class="dialog" id="inputsDialog"><h2>Inputs</h2><div id="inputButtons"></div><div class="close-btn" onclick="closeDialog('inputsDialog')">✕ Close</div></div>
+
+<!-- Draggable log widget -->
+<div id="logWidget"></div>
+
+<script src="https://dropbox.inf.re/webos-gfn/wsproxy.js"></script>
+<script src="https://dropbox.inf.re/webos-gfn/client.js"></script>
+<script>
+// ----- Logging -----
+let client,currentVolume=10,isMuted=false;
+function log(m){const L=document.getElementById('logWidget');L.textContent='['+new Date().toLocaleTimeString()+'] '+m+'\n'+L.textContent;}
+
+// ----- SSAP Client -----
+async function initClient(){if(client)return;client=new SSAPClient('127.0.0.1',localStorage['client-key-127.0.0.1']);await client.connect();localStorage['client-key-127.0.0.1']=await client.register();}
+function sendReq(uri,payload={}){(async()=>{try{if(!client)await initClient();await client.request({uri,payload});log('OK '+uri);}catch(e){log('ERR '+e)}})();}
+
+// ----- Core Actions -----
+async function launchApp(id){sendReq('ssap://com.webos.applicationManager/launch',{id})}
+function volumeUp(){currentVolume++;sendReq('ssap://audio/setVolume',{volume:currentVolume});log('Volume '+currentVolume)}
+function volumeDown(){currentVolume--;sendReq('ssap://audio/setVolume',{volume:currentVolume});log('Volume '+currentVolume)}
+function toggleMute(){isMuted=!isMuted;sendReq('ssap://audio/setMute',{mute:isMuted});log('Mute '+isMuted)}
+function setVolume(){let v=parseInt(document.getElementById('volInput').value)||0;currentVolume=v;sendReq('ssap://audio/setVolume',{volume:v});log('Volume set to '+v)}
+function closeDialog(id){document.getElementById(id).style.display='none'}
+
+// ----- Draggable Helper -----
+function makeDraggable(el){let isDown=false,offsetX,offsetY;el.onmousedown=function(e){isDown=true;offsetX=e.clientX-el.offsetLeft;offsetY=e.clientY-el.offsetTop;};document.onmouseup=function(){isDown=false;};document.onmousemove=function(e){if(!isDown)return;el.style.left=(e.clientX-offsetX)+'px';el.style.top=(e.clientY-offsetY)+'px';};}
+
+// ----- PCM Sounds -----
+const pcmSounds=[
+  {label:'Power On',name:'power-on'},{label:'Power Off',name:'power-off'},{label:'Welcome',name:'welcome'},
+  {label:'Fail',name:'fail'},{label:'Success',name:'success'},{label:'Input Detected',name:'input-detected'}
+];
+document.getElementById('pcmBtn').onclick=()=>{
+  const c=document.getElementById('pcmButtons');c.innerHTML='';
+  pcmSounds.forEach(s=>{const b=document.createElement('button');b.className='btn';b.textContent=s.label;b.onclick=()=>sendReq('ssap://com.webos.audio/systemsounds/playFeedback',{play:true,sink:'pfeedback',name:s.name});c.appendChild(b);});
+  const d=document.getElementById('pcmDialog');d.style.display='block';makeDraggable(d);
+};
+
+// ----- TVHotkey Menu -----
+const tvHotkeyButtons=[
+  {label:'Home',onclick:'ssap://com.webos.applicationManager/launch',params:{id:'com.webos.app.fullhome'}},
+  {label:'FullHome',onclick:'ssap://com.webos.applicationManager/launch',params:{id:'com.webos.app.fullhome'}},
+  {label:'Energy Saving',onclick:'ssap://com.webos.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'energy-saving-mode'}}}
+];
+document.getElementById('tvHotkeyMenuBtn').onclick=()=>{
+  const c=document.getElementById('tvHotkeyButtons');c.innerHTML='';
+  tvHotkeyButtons.forEach(s=>{const b=document.createElement('button');b.className='btn';b.textContent=s.label;b.onclick=()=>sendReq(s.onclick,s.params);c.appendChild(b);});
+  const d=document.getElementById('tvHotkeyDialog');d.style.display='block';makeDraggable(d);
+};
+
+// ----- Inputs -----
+const inputList=[
+  {label:'HDMI 1',src:'ext://hdmi:1'},{label:'HDMI 2',src:'ext://hdmi:2'},{label:'HDMI 3',src:'ext://hdmi:3'},{label:'HDMI 4',src:'ext://hdmi:4'},
+  {label:'Component 1',src:'ext://comp:1'},{label:'AV 1',src:'ext://av:1'},{label:'AV 2',src:'ext://av:2'},{label:'SCART 1',src:'ext://scart:1'},
+  {label:'Live TV 1',src:'atv://cable:1/dvb/1'},{label:'Live TV 2',src:'atv://cable:2/dvb/2'}
+];
+document.getElementById('inputsBtn').onclick=()=>{
+  const c=document.getElementById('inputButtons');c.innerHTML='';
+  inputList.forEach(s=>{const b=document.createElement('button');b.className='btn';b.textContent=s.label;b.onclick=()=>{window.open(s.src,'_blank');};c.appendChild(b);});
+  const d=document.getElementById('inputsDialog');d.style.display='block';makeDraggable(d);
+};
+
+// ----- Make log widget draggable -----
+makeDraggable(document.getElementById('logWidget'));
+</script>
+</body>
+</html>
