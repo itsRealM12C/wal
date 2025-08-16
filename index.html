@@ -64,7 +64,11 @@
     <button class="btn" onclick="launchApp('com.webos.app.discovery')">LG Content Store</button>
     <button class="btn" onclick="launchApp('com.webos.app.home')">Home</button>
     <button class="btn" onclick="launchApp('com.webos.app.fullhome')">New Home</button>
-    
+
+    <h1>🔊 Volume Controls</h1>
+    <button class="btn" onclick="volumeUp()">Volume Up</button>
+    <button class="btn" onclick="volumeDown()">Volume Down</button>
+    <button class="btn" onclick="toggleMute()">Mute / Unmute</button>
 
     <pre id="log"></pre>
 
@@ -73,44 +77,80 @@
     <script src="https://dropbox.inf.re/webos-gfn/client.js"></script>
 
     <script>
+      let client;
+      let currentVolume = 10; // default fallback
+      let isMuted = false;
+
       function log(msg) {
         const l = document.querySelector("#log");
         l.innerText =
           "[" + new Date().toLocaleTimeString() + "] " + msg + "\n" + l.innerText;
       }
 
+      async function initClient() {
+        const target = "127.0.0.1";
+        log("connecting to " + target + "...");
+        client = new SSAPClient(target, window.localStorage["client-key-" + target]);
+        await client.connect();
+        log("registering...");
+        window.localStorage["client-key-" + target] = await client.register();
+      }
+
       async function launchApp(appId) {
         try {
-          const target = "127.0.0.1";
-          log("connecting to " + target + "...");
-          const client = new SSAPClient(
-            target,
-            window.localStorage["client-key-" + target]
-          );
-          await client.connect();
-
-          log("registering...");
-          window.localStorage["client-key-" + target] = await client.register();
-
+          if (!client) await initClient();
           log("launching app " + appId + "...");
           await client.request({
             uri: "ssap://system.launcher/launch",
-            payload: {
-              id: appId
-            }
+            payload: { id: appId }
           });
-
           log("launch request sent for " + appId);
         } catch (e) {
-          console.error(e);
           log("failed: " + e);
         }
       }
-    </script>
-  </body>
-</html>                
-  </body>
-</html>                
+
+      async function volumeUp() {
+        try {
+          if (!client) await initClient();
+          currentVolume++;
+          await client.request({
+            uri: "ssap://audio/setVolume",
+            payload: { volume: currentVolume }
+          });
+          log("Volume set to " + currentVolume);
+        } catch (e) {
+          log("failed volume up: " + e);
+        }
+      }
+
+      async function volumeDown() {
+        try {
+          if (!client) await initClient();
+          currentVolume = Math.max(0, currentVolume - 1);
+          await client.request({
+            uri: "ssap://audio/setVolume",
+            payload: { volume: currentVolume }
+          });
+          log("Volume set to " + currentVolume);
+        } catch (e) {
+          log("failed volume down: " + e);
+        }
+      }
+
+      async function toggleMute() {
+        try {
+          if (!client) await initClient();
+          isMuted = !isMuted;
+          await client.request({
+            uri: "ssap://audio/setMute",
+            payload: { mute: isMuted }
+          });
+          log("Mute set to " + isMuted);
+        } catch (e) {
+          log("failed mute toggle: " + e);
+        }
+      }
     </script>
   </body>
 </html>
