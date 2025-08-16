@@ -1009,21 +1009,35 @@
             }
         }
 
-        async function showSoundAlert() {
-            try {
-                const client = await ensureClient();
-                const buttons = [
-                    { label: "Power On", onclick: { uri: "luna://com.webos.audio/systemsounds/playFeedback", params: { play: true, sink: "pfeedback", name: "power-on" } } },
-                    { label: "Power Off", onclick: { uri: "luna://com.webos.audio/systemsounds/playFeedback", params: { play: true, sink: "pfeedback", name: "power-off" } } },
-                    { label: "Welcome", onclick: { uri: "luna://com.webos.audio/systemsounds/playFeedback", params: { play: true, sink: "pfeedback", name: "welcome" } } },
-                    { label: "FU Fail", onclick: { uri: "luna://com.webos.audio/systemsounds/playFeedback", params: { play: true, sink: "pfeedback", name: "first-use-fail" } } },
-                    { label: "FU Success", onclick: { uri: "luna://com.webos.audio/systemsounds/playFeedback", params: { play: true, sink: "pfeedback", name: "first-use-success" } } },
-                    { label: "Input Detected", onclick: { uri: "luna://com.webos.audio/systemsounds/playFeedback", params: { play: true, sink: "pfeedback", name: "input-detected" } } },
-                    { label: "Voice Start", onclick: { uri: "luna://com.webos.audio/systemsounds/playFeedback", params: { play: true, sink: "pfeedback", name: "voicestart" } } },
-                    { label: "Voice Confirm", onclick: { uri: "luna://com.webos.audio/systemsounds/playFeedback", params: { play: true, sink: "pfeedback", name: "voiceconfirm" } } },
-                    { label: "Voice Cancel", onclick: { uri: "luna://com.webos.audio/systemsounds/playFeedback", params: { play: true, sink: "pfeedback", name: "voicecancel" } } },
-                    { label: "Loading", onclick: { uri: "luna://com.webos.audio/systemsounds/playFeedback", params: { play: true, sink: "pfeedback", name: "loading" } } }
-                ];
+        async function playSound(soundName) {
+    try {
+        const soundPayloads = {
+            'power-on': {play: true, sink: "pfeedback", name: "power-on"},
+            'power-off': {play: true, sink: "pfeedback", name: "power-off"},
+            'welcome': {play: true, sink: "pfeedback", name: "welcome"},
+            'first-use-fail': {play: true, sink: "pfeedback", name: "first-use-fail"},
+            'first-use-success': {play: true, sink: "pfeedback", name: "first-use-success"},
+            'input-detected': {play: true, sink: "pfeedback", name: "input-detected"},
+            'voicestart': {play: true, sink: "pfeedback", name: "voicestart"},
+            'voiceconfirm': {play: true, sink: "pfeedback", name: "voiceconfirm"},
+            'voicecancel': {play: true, sink: "pfeedback", name: "voicecancel"},
+            'loading': {play: true, sink: "pfeedback", name: "loading"}
+        };
+
+        if (soundPayloads[soundName]) {
+            const client = await ensureClient();
+            await client.request({
+                uri: "luna://com.webos.audio/systemsounds/playFeedback",
+                payload: soundPayloads[soundName]
+            });
+            log("Played sound: " + soundName);
+        } else {
+            log("Unknown sound: " + soundName);
+        }
+    } catch (e) {
+        log("Failed to play sound: " + e);
+    }
+        }
                 
                 await client.request({
                     uri: "ssap://system.notifications/createAlert",
