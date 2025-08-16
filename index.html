@@ -1,138 +1,1051 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<title>webOS Launcher + Generators</title>
-<style>
-body{margin:0;padding:0;font-family:Arial,sans-serif;background:#0b0b0b;color:white;overflow:hidden;}
-h1{font-size:18px;color:#dcdcdc;text-shadow:0 0 4px #000;margin:6px 0;}
-.btn{display:block;width:180px;margin:4px auto;padding:8px;background:linear-gradient(#303030,#1a1a1a);border:2px solid #555;border-radius:10px;color:#fff;font-weight:bold;cursor:pointer;text-align:center;z-index:50;position:relative;}
-.btn:hover{background:linear-gradient(#444,#222);border-color:#888;}
-.form-box{background: rgba(255,255,255,0.05);padding:6px;border-radius:8px;margin:4px auto;width:220px;text-align:left;z-index:50;position:relative;}
-.form-box label{font-size:12px;color:#ccc;margin-top:4px;display:block;}
-.form-box input[type="text"]{width:100%;padding:4px;border-radius:6px;border:1px solid #444;background:#222;color:#fff;}
-.section{position:absolute;top:6px;width:240px;z-index:50;}
-.left{left:6px;}
-.right{right:6px;}
-.pcm-dialog{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:2px solid #555;padding:10px;border-radius:10px;width:280px;display:none;z-index:100;}
-.pcm-dialog h2{font-size:16px;margin:0 0 6px 0;color:#dcdcdc;}
-.pcm-dialog button{display:block;width:100%;margin:2px 0;}
-.pcm-close{position:absolute;top:4px;right:6px;background:#900;border:none;color:#fff;border-radius:4px;cursor:pointer;width:24px;height:24px;}
-#log{position:fixed;bottom:0;left:0;width:100%;max-height:150px;overflow-y:auto;background:rgba(0,0,0,0.7);font-size:12px;padding:6px;color:#9a9a9a;box-sizing:border-box;z-index:0;}
-</style>
+    <title>LG webOS Launcher</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        /* Base Styles */
+        body {
+            background: #0b0b0b;
+            font-family: Arial, sans-serif;
+            color: white;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        #app-container {
+            width: 100vw;
+            height: 100vh;
+            overflow: auto;
+            scroll-behavior: smooth;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        h1 {
+            font-size: 1.2rem;
+            margin: 10px 0 6px;
+            color: #dcdcdc;
+            text-shadow: 0 0 4px #000;
+        }
+        h2 {
+            font-size: 1rem;
+            margin: 8px 0 4px;
+            color: #dcdcdc;
+        }
+        
+        /* Tab Navigation */
+        .tab-container {
+            display: flex;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #333;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            padding: 8px 16px;
+            background: #222;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: #ccc;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .tab-btn.active {
+            background: #333;
+            border-bottom: 2px solid #4af;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Common Button Styles */
+        .btn {
+            display: inline-block;
+            width: 100%;
+            margin: 4px 0;
+            padding: 8px;
+            background: linear-gradient(#303030, #1a1a1a);
+            border: 1px solid #555;
+            border-radius: 8px;
+            color: white;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 2px 3px rgba(0,0,0,0.4);
+            outline: none;
+            transition: all 0.2s ease;
+        }
+        .btn:hover, .btn:focus {
+            background: linear-gradient(#444, #222);
+            border-color: #888;
+        }
+        .btn.selected {
+            background: linear-gradient(#555, #333);
+            border-color: #aaa;
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.5);
+            transform: scale(1.05);
+        }
+        .compact-btn {
+            display: inline-block;
+            width: 100%;
+            margin: 2px 0;
+            padding: 6px;
+            background: linear-gradient(#252525, #1a1a1a);
+            border: 1px solid #444;
+            border-radius: 6px;
+            color: white;
+            font-size: 0.7rem;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+        
+        /* Input Player Styles */
+        .input-btn {
+            padding: 10px;
+            margin: 5px;
+            min-width: 100px;
+            background: #252525;
+            border: 1px solid #444;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+        }
+        .input-btn.active {
+            background: #4a4a4a;
+            border-color: #4af;
+        }
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        .player-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .record-indicator {
+            color: red;
+            font-weight: bold;
+            margin: 10px;
+        }
+        .record-btn-ui {
+            padding: 8px 12px;
+            margin: 0 5px;
+            background: #500;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+        }
+        .choose-file-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1001;
+        }
+        .chooser-box {
+            background: #222;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .chooser-path-input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            background: #333;
+            border: 1px solid #555;
+            color: white;
+        }
+        .close-hint {
+            margin-top: 15px;
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+        
+        /* Form Elements */
+        .form-box {
+            background: rgba(255,255,255,0.05);
+            padding: 12px;
+            margin: 12px auto;
+            border-radius: 8px;
+            max-width: 500px;
+        }
+        .form-box label {
+            display: block;
+            margin-top: 8px;
+            font-size: 14px;
+            color: #ccc;
+        }
+        .form-box input[type="text"],
+        .form-box input[type="checkbox"] {
+            margin-top: 5px;
+        }
+        
+        /* Section Layout */
+        .section {
+            margin-bottom: 10px;
+            padding: 8px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+        }
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 6px;
+            margin: 6px 0;
+        }
+        .compact-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+            gap: 4px;
+            margin: 4px 0;
+        }
+        
+        /* Log Display */
+        #log {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            font-size: 0.7rem;
+            color: #9a9a9a;
+            text-align: left;
+            background: rgba(255,255,255,0.05);
+            padding: 6px;
+            border-radius: 6px;
+            max-height: 100px;
+            overflow-y: auto;
+            z-index: 100;
+        }
+    </style>
 </head>
 <body>
+    <div class="tab-container">
+        <button class="tab-btn active" data-tab="main">Main</button>
+        <button class="tab-btn" data-tab="inputs">Inputs</button>
+        <button class="tab-btn" data-tab="live-tv">Live TV</button>
+        <button class="tab-btn" data-tab="toast">Toast</button>
+        <button class="tab-btn" data-tab="alert">Alert</button>
+    </div>
 
-<div class="section left">
-<h1>📺 Launcher</h1>
-<button class="btn" onclick="launchApp('com.webos.app.browser')">Web Browser</button>
-<button class="btn" onclick="launchApp('com.webos.app.cheeringtv')">Cheering TV</button>
-<button class="btn" onclick="launchApp('com.palm.app.settings')">Settings</button>
-<button class="btn" onclick="launchApp('com.webos.app.installation')">Secret Menu</button>
-<button class="btn" onclick="launchApp('com.webos.app.discovery')">LG Content Store</button>
+    <div id="app-container">
+        <!-- Main Tab Content -->
+        <div id="main-tab" class="tab-content active">
+            <div class="section">
+                <h1>📺 TV Controls</h1>
+                <div class="grid-container">
+                    <button class="btn" data-key="FRONTKEY_INPUT_SELECT">Input</button>
+                    <button class="btn" data-key="MENU">Quick Settings</button>
+                    <button class="btn" data-key="PAIRING_M4">Magic Remote Pair</button>
+                    <button class="btn" onclick="showTVHotkeyMenu()">TVHotkey Menu</button>
+                    <button class="btn" onclick="showBrowserMenu()">Other</button>
+                </div>
+            </div>
 
-<h1>🔊 Volume</h1>
-<button class="btn" onclick="volumeUp()">Volume +</button>
-<button class="btn" onclick="volumeDown()">Volume -</button>
-<button class="btn" onclick="toggleMute()">Mute/Unmute</button>
+            <div class="section">
+                <h1>🔆 Display</h1>
+                <div class="grid-container">
+                    <button class="btn" data-key="BRIGHTNESS_UP">Brightness Up</button>
+                    <button class="btn" data-key="BRIGHTNESS_DOWN">Brightness Down</button>
+                </div>
+            </div>
 
-<h1>Extra Keys</h1>
-<button class="btn" data-key="FRONTKEY_INPUT_SELECT">Input</button>
-<button class="btn" data-key="MENU">Quick Settings</button>
-<button class="btn" data-key="PAIRING_M4">LG Magic Remote Pair</button>
-<button class="btn" data-key="BRIGHTNESS_UP">Brightness +</button>
-<button class="btn" data-key="BRIGHTNESS_DOWN">Brightness -</button>
-</div>
+            <div class="section">
+                <h1>📺 Apps</h1>
+                <div class="grid-container">
+                    <button class="btn" onclick="launchApp('com.webos.app.browser')">Web Browser</button>
+                    <button class="btn" onclick="launchApp('com.webos.app.cheeringtv')">Cheering TV</button>
+                    <button class="btn" onclick="launchApp('com.palm.app.settings')">Settings</button>
+                    <button class="btn" onclick="launchApp('com.webos.app.installation')">Secret Menu</button>
+                    <button class="btn" onclick="launchApp('com.webos.app.discovery')">LG Content Store</button>
+                </div>
+            </div>
 
-<div class="section right">
-<h1>PCM Sound Player</h1>
-<button class="btn" onclick="showPCMSound()">Open PCM Sounds</button>
+            <div class="section">
+                <h1>🔊 Volume</h1>
+                <div class="grid-container">
+                    <button class="btn" onclick="volumeUp()">Volume Up</button>
+                    <button class="btn" onclick="volumeDown()">Volume Down</button>
+                    <button class="btn" onclick="toggleMute()">Mute</button>
+                    <button class="btn" onclick="showSoundAlert()">Sound Effects</button>
+                </div>
+            </div>
 
-<h1>TVHotkey</h1>
-<div id="tvhotkeyButtons"></div>
+            <div class="section">
+                <h1>🔊 PCM Sounds</h1>
+                <div class="compact-grid">
+                    <button class="compact-btn" onclick="playSound('power-on')">Power On</button>
+                    <button class="compact-btn" onclick="playSound('power-off')">Power Off</button>
+                    <button class="compact-btn" onclick="playSound('welcome')">Welcome</button>
+                    <button class="compact-btn" onclick="playSound('first-use-fail')">FU Fail</button>
+                    <button class="compact-btn" onclick="playSound('first-use-success')">FU Success</button>
+                    <button class="compact-btn" onclick="playSound('input-detected')">Input Detected</button>
+                    <button class="compact-btn" onclick="playSound('voicestart')">Voice Start</button>
+                    <button class="compact-btn" onclick="playSound('voiceconfirm')">Voice Confirm</button>
+                    <button class="compact-btn" onclick="playSound('voicecancel')">Voice Cancel</button>
+                    <button class="compact-btn" onclick="playSound('loading')">Loading</button>
+                </div>
+            </div>
 
-<h1>Other Apps</h1>
-<div id="otherButtons"></div>
-</div>
+            <div class="section">
+                <h1>📺 TV Hotkeys</h1>
+                <div class="compact-grid">
+                    <button class="compact-btn" onclick="activateTVHotkey('energy-saving-mode')">Energy Saving</button>
+                    <button class="compact-btn" onclick="activateTVHotkey('aspect-ratio')">Aspect Ratio</button>
+                    <button class="compact-btn" onclick="activateTVHotkey('store-mode')">Store Mode</button>
+                    <button class="compact-btn" onclick="activateTVHotkey('soccer-mode')">Soccer Mode</button>
+                    <button class="compact-btn" onclick="activateTVHotkey('sleep')">Sleep Timer</button>
+                    <button class="compact-btn" onclick="activateTVHotkey('subtitle')">Subtitle</button>
+                    <button class="compact-btn" onclick="activateTVHotkey('simplink')">SIMPLINK</button>
+                    <button class="compact-btn" onclick="activateTVHotkey('3d-mode')">3D Mode</button>
+                    <button class="compact-btn" onclick="activateTVHotkey('local-key')">Local Key</button>
+                    <button class="compact-btn" onclick="activateTVHotkey('multi-sound-setting')">Multi Audio</button>
+                    <button class="compact-btn" onclick="activateTVHotkey('audio-description')">Audio Desc</button>
+                    <button class="compact-btn" onclick="takeScreenshot()">Screenshot</button>
+                </div>
+            </div>
+        </div>
 
-<div id="log"></div>
+        <!-- Inputs Tab Content -->
+        <div id="inputs-tab" class="tab-content">
+            <h2>Input Runner (Simple Player)</h2>
+            <div id="inputList" tabindex="0">
+                <div class="row">
+                    <button class="input-btn" data-src="ext://hdmi:1">HDMI 1</button>
+                    <button class="input-btn" data-src="ext://hdmi:2">HDMI 2</button>
+                    <button class="input-btn" data-src="ext://hdmi:3">HDMI 3</button>
+                    <button class="input-btn" data-src="ext://hdmi:4">HDMI 4</button>
+                </div>
+                <div class="row">
+                    <button class="input-btn" data-src="ext://comp:1">Component 1</button>
+                    <button class="input-btn" data-src="ext://av:1">AV 1</button>
+                    <button class="input-btn" data-src="ext://av:2">AV 2</button>
+                    <button class="input-btn" data-src="ext://scart:1">SCART 1</button>
+                </div>
+                <div class="row">
+                    <button class="input-btn" data-src="atv://cable:1/dvb/1">Live TV 1</button>
+                    <button class="input-btn" data-src="atv://cable:2/dvb/2">Live TV 2</button>
+                </div>
+            </div>
 
-<!-- PCM Sound Dialog -->
-<div class="pcm-dialog" id="pcmDialog">
-<button class="pcm-close" onclick="closePCMSound()">X</button>
-<h2>PCM Sounds</h2>
-<div id="pcmButtons"></div>
-</div>
+            <div id="playerModal" class="player-modal" style="display:none">
+                <div id="playerLabel"></div>
+                <div id="recordIndicator" class="record-indicator" style="display:none">● REC</div>
+                <video id="playerVideo" autoplay controls style="width: 50%; height: 50%;">
+                    <source id="playerSource" type="service/webos-external">
+                </video>
+                <div id="recordBtns" style="margin-top:8px;display:none;">
+                    <button type="button" class="record-btn-ui" id="manualStartBtn">● Start Recording</button>
+                    <button type="button" class="record-btn-ui" id="manualStopBtn">■ Stop &amp; Save</button>
+                </div>
+                <div class="close-hint">
+                    (BACKSPACE/BACK/ESC = Exit, Page Up/Down = Size, RECORD = Start, STOP = Save)
+                </div>
+            </div>
 
-<script src="https://dropbox.inf.re/webos-gfn/wsproxy.js"></script>
-<script src="https://dropbox.inf.re/webos-gfn/client.js"></script>
-<script>
-let client,currentVolume=10,isMuted=false;
+            <div id="chooseFileModal" class="choose-file-modal" style="display:none">
+                <form class="chooser-box" id="fileChooserForm" autocomplete="off">
+                    <div style="font-size:1.1em;margin-bottom:10px;color:#f3c83d;">
+                        Save Recording<br>Enter folder, then a filename (mp4):
+                    </div>
+                    <input class="chooser-path-input" id="filePathInput" type="text" placeholder="/tmp/rec.mp4" value="/tmp/rec.mp4" autocomplete="off" required>
+                    <div style="margin-top:13px;">
+                        <button type="submit" class="record-btn-ui" style="background:#253;">Save</button>
+                        <button type="button" class="record-btn-ui" style="background:#334;" id="cancelChooserBtn">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
 
-const pcmSounds=[
-{label:"Power On",name:"power-on"},{label:"Power Off",name:"power-off"},{label:"Welcome",name:"welcome"},
-{label:"FU Fail",name:"first-use-fail"},{label:"FU Success",name:"first-use-success"},{label:"inputD",name:"input-detected"},
-{label:"Vstart",name:"voicestart"},{label:"Vconfirm",name:"voiceconfirm"},{label:"Vcancel",name:"voicecancel"},{label:"loading",name:"loading"}
-];
+        <!-- Live TV Tab Content -->
+        <div id="live-tv-tab" class="tab-content">
+            <h2>Live TV Channels</h2>
+            <div id="channelList" class="grid-container"></div>
+            <button id="scanChannelsBtn" class="btn" style="margin-top: 15px;">Scan for Channels</button>
+        </div>
 
-const tvHotkeys=[
-{label:"Energy Saving",params:{activateType:"energy-saving-mode"}},
-{label:"Aspect Ratio",params:{activateType:"aspect-ratio"}},
-{label:"Store Mode",params:{activateType:"store-mode"}},
-{label:"Soccer Mode",params:{activateType:"soccer-mode"}},
-{label:"Sleep Timer",params:{activateType:"sleep"}},
-{label:"Subtitle",params:{activateType:"subtitle"}},
-{label:"SIMPLINK",params:{activateType:"simplink"}},
-{label:"3D Mode",params:{activateType:"3d-mode"}},
-{label:"One Local Key",params:{activateType:"one-local-key"}},
-{label:"Local Key Menu",params:{activateType:"local-key"}},
-{label:"Multi Audio",params:{activateType:"multi-sound-setting"}},
-{label:"Audio Description",params:{activateType:"audio-description"}},
-{label:"Screenshot",params:{command:"/media/developer/apps/usr/palm/applications/org.set.app/screenshot-flow.sh"}}
-];
+        <!-- Toast Generator Tab -->
+        <div id="toast-tab" class="tab-content">
+            <div class="section">
+                <h1>🍞 Toast Generator</h1>
+                <div class="form-box">
+                    <label>Message:</label>
+                    <input type="text" id="toastMsg" placeholder="Enter toast message">
+                    <label>Icon URL:</label>
+                    <input type="text" id="toastIcon" placeholder="/usr/palm/applications/com.webos.app.notificationcenter/icon_notification.png">
+                    <label><input type="checkbox" id="toastOnclick"> Add OnClick (Open Browser)</label>
+                    <button class="btn" onclick="generateToast()">Generate Toast</button>
+                </div>
+            </div>
+        </div>
 
-const otherApps=[
-{label:"BeanBrowser",params:{id:"com.webos.app.beanbrowser"}},
-{label:"Web Browser",params:{id:"com.webos.app.browser"}},
-{label:"Web App",params:{id:"com.webos.app.webapphost"}},
-{label:"Watch a Video",params:{command:"play-video"}},
-{label:"Play a Sound",params:{command:"play-sound"}},
-{label:"Screen Record",params:{command:"start-record"}}
-];
+        <!-- Alert Generator Tab -->
+        <div id="alert-tab" class="tab-content">
+            <div class="section">
+                <h1>⚠️ Alert Generator</h1>
+                <div class="form-box">
+                    <label>Title:</label>
+                    <input type="text" id="alertTitle" placeholder="Enter alert title">
+                    <label>Message:</label>
+                    <input type="text" id="alertMessage" placeholder="Enter alert message">
+                    <label>Buttons (comma-separated):</label>
+                    <input type="text" id="alertButtons" placeholder="OK, Cancel">
+                    <button class="btn" onclick="generateAlert()">Generate Alert</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-function log(msg){let l=document.getElementById("log");l.innerText="["+new Date().toLocaleTimeString()+"] "+msg+"\n"+l.innerText;l.scrollTop=0;}
+    <pre id="log"></pre>
 
-async function initClient(){if(client)return;client=new SSAPClient("127.0.0.1",window.localStorage["client-key-127.0.0.1"]);await client.connect();window.localStorage["client-key-127.0.0.1"]=await client.register();}
+    <script src="https://dropbox.inf.re/webos-gfn/wsproxy.js"></script>
+    <script src="https://dropbox.inf.re/webos-gfn/client.js"></script>
+    <script>
+        // Tab Navigation
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remove active class from all tabs
+                tabBtns.forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                // Add active class to clicked tab
+                btn.classList.add('active');
+                document.getElementById(`${btn.dataset.tab}-tab`).classList.add('active');
+                
+                // Reinitialize keyboard navigation for the active tab
+                initKeyboardNavigation();
+            });
+        });
 
-async function sendRequest(uri,payload){
-let isC53=navigator.userAgent.indexOf("Chrome/53")!==-1;
-if(isC53){webOS.service.request(uri.replace("ssap://","luna://"),{method:"call",parameters:payload,onSuccess:r=>log("Success: "+JSON.stringify(r)),onFailure:e=>log("Fail: "+JSON.stringify(e))});}
-else{if(!client)await initClient();await client.request({uri,payload});}
-}
+        // Input Player Code
+        var inputList = document.getElementById('inputList');
+        var playerModal = document.getElementById('playerModal');
+        var playerVideo = document.getElementById('playerVideo');
+        var playerSource = document.getElementById('playerSource');
+        var playerLabel = document.getElementById('playerLabel');
+        var inputBtns = Array.prototype.slice.call(document.querySelectorAll('.input-btn'));
+        var focusedIdx = 0;
+        var playerSizes = [
+            {w: "32vw", h: "28vh"}, // small
+            {w: "50vw", h: "50vh"}, // normal
+            {w: "80vw", h: "80vh"}, // big
+        ];
+        var playerSizeIdx = 1;
+        var playerIsOpen = false;
 
-async function launchApp(id){await sendRequest("ssap://system.launcher/launch",{id});log("Launched "+id);}
-async function volumeUp(){currentVolume++;await sendRequest("ssap://audio/setVolume",{volume:currentVolume});log("Volume "+currentVolume);}
-async function volumeDown(){currentVolume=Math.max(0,currentVolume-1);await sendRequest("ssap://audio/setVolume",{volume:currentVolume});log("Volume "+currentVolume);}
-async function toggleMute(){isMuted=!isMuted;await sendRequest("ssap://audio/setMute",{mute:isMuted});log("Mute "+isMuted);}
+        // Recording Support
+        var isRecording = false;
+        var recorder = null;
+        var recordedChunks = [];
+        var recordingSourceType = "";
+        var recordIndicator = document.getElementById('recordIndicator');
+        var recordBtns = document.getElementById('recordBtns');
+        var isLgWebos = navigator.userAgent.indexOf("WebOS") > -1 || navigator.userAgent.indexOf("webOS") > -1;
+        var chooseFileModal = document.getElementById("chooseFileModal");
+        var fileChooserForm = document.getElementById("fileChooserForm");
+        var filePathInput = document.getElementById("filePathInput");
+        var cancelChooserBtn = document.getElementById("cancelChooserBtn");
 
-// Extra keys
-document.querySelectorAll('button[data-key]').forEach(b=>b.addEventListener('click',()=>{sendRequest("ssap://com.webos.service.tvinput/sendKeyEvent",{key:b.dataset.key});log("Sent key "+b.dataset.key);}))
+        if (!isLgWebos) { recordBtns.style.display = ""; } else { recordBtns.style.display = "none"; }
 
-// PCM Sound Player
-function showPCMSound(){
-let c=document.getElementById("pcmButtons");c.innerHTML="";
-pcmSounds.forEach(s=>{let btn=document.createElement("button");btn.textContent=s.label;btn.onclick=()=>sendRequest("ssap://com.webos.audio/systemsounds/playFeedback",{play:true,sink:"pfeedback",name:s.name});c.appendChild(btn);});
-document.getElementById("pcmDialog").style.display="block";
-}
-function closePCMSound(){document.getElementById("pcmDialog").style.display="none";}
+        function setActiveBtn(idx) {
+            inputBtns.forEach(function (btn, i) {
+                if (i === idx) {
+                    btn.classList.add("active");
+                    btn.focus();
+                } else {
+                    btn.classList.remove("active");
+                }
+            });
+            focusedIdx = idx;
+        }
 
-// TVHotkey Buttons
-let thDiv=document.getElementById("tvhotkeyButtons");
-tvHotkeys.forEach(t=>{let b=document.createElement("button");b.className="btn";b.textContent=t.label;b.onclick=()=>sendRequest("ssap://com.webos.service.applicationManager/launch",{id:"com.webos.app.tvhotkey",params:t.params});thDiv.appendChild(b);});
+        setActiveBtn(0);
 
-// Other Apps Buttons
-let oaDiv=document.getElementById("otherButtons");
-otherApps.forEach(o=>{let b=document.createElement("button");b.className="btn";b.textContent=o.label;b.onclick=()=>sendRequest(o.params.command? "ssap://org.webosbrew.hbchannel.service/exec" : "ssap://com.webos.applicationManager/launch", o.params);oaDiv.appendChild(b);});
-</script>
+        function openPlayer(idx) {
+            var btn = inputBtns[idx];
+            var src = btn.getAttribute('data-src');
+            var name = btn.textContent;
+            playerSource.src = src;
+            playerVideo.load();
+            playerLabel.textContent = name;
+            playerModal.style.display = "";
+            playerSizeIdx = 1;
+            setPlayerSize(playerSizeIdx);
+            playerVideo.focus();
+            playerIsOpen = true;
+            stopRecording(true); 
+            recordIndicator.style.display = "none";
+        }
+
+        inputList.addEventListener('keydown', function (e) {
+            if (playerIsOpen) return;
+            if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+                var next = (focusedIdx + 1) % inputBtns.length;
+                setActiveBtn(next);
+                e.preventDefault();
+            } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+                var prev = (focusedIdx - 1 + inputBtns.length) % inputBtns.length;
+                setActiveBtn(prev);
+                e.preventDefault();
+            } else if (e.key === "Enter" || e.key === " ") {
+                openPlayer(focusedIdx);
+                e.preventDefault();
+            }
+        });
+
+        inputBtns.forEach(function (btn, idx) {
+            btn.addEventListener('click', function () {
+                setActiveBtn(idx);
+                openPlayer(idx);
+            });
+            btn.addEventListener('focus', function () { setActiveBtn(idx); });
+        });
+
+        function setPlayerSize(idx) {
+            idx = Math.max(0, Math.min(2, idx));
+            playerSizeIdx = idx;
+            var sz = playerSizes[idx];
+            playerVideo.style.width = sz.w;
+            playerVideo.style.height = sz.h;
+        }
+
+        function exitPlayer() {
+            playerModal.style.display = "none";
+            playerVideo.pause();
+            playerIsOpen = false;
+            stopRecording(true); 
+            inputList.focus();
+            setActiveBtn(focusedIdx);
+            recordIndicator.style.display = "none";
+        }
+
+        function tryStartWebosRecord() {
+            if (window.webOS && window.webOS.service) {
+                alert("Start recording (webOS API call goes here)");
+                isRecording = true;
+                recordingSourceType = playerSource.src;
+                recordIndicator.style.display = "";
+            } else {
+                alert("Recording is only available on LG webOS TV!");
+            }
+        }
+
+        function tryStopWebosRecordAndSave() {
+            function doSave(filePath) {
+                if (window.webOS && window.webOS.service) {
+                    alert("Save recording to: " + filePath + "\n(webOS API call goes here)");
+                    isRecording = false;
+                    recordIndicator.style.display = "none";
+                } else {
+                    alert("Saving is only available on LG webOS TV!");
+                }
+            }
+
+            chooseFileModal.style.display = "";
+            filePathInput.value = "/tmp/rec.mp4";
+            filePathInput.focus();
+            fileChooserForm.onsubmit = function(ev) {
+                ev.preventDefault();
+                var path = filePathInput.value || "/tmp/rec.mp4";
+                doSave(path);
+                chooseFileModal.style.display = "none";
+                return false;
+            };
+            cancelChooserBtn.onclick = function() {
+                chooseFileModal.style.display = "none";
+            }
+        }
+
+        function startRecording() {
+            if (isLgWebos) {
+                tryStartWebosRecord();
+                return;
+            }
+            if (!window.MediaRecorder) {
+                alert("MediaRecorder not supported.");
+                return;
+            }
+            try {
+                var stream = playerVideo.captureStream ? playerVideo.captureStream() :
+                             playerVideo.mozCaptureStream ? playerVideo.mozCaptureStream() : null;
+                if (!stream) { alert("Cannot record this video."); return; }
+                recorder = new MediaRecorder(stream, {mimeType: "video/webm"});
+                recordedChunks = [];
+                recorder.ondataavailable = function(e){ if(e.data.size>0) recordedChunks.push(e.data);}
+                recorder.onstop = function(){
+                    recordIndicator.style.display = "none";
+                    var blob = new Blob(recordedChunks, {type:"video/webm"});
+                    var url = URL.createObjectURL(blob);
+                    showSaveDialog(url, "recorded.webm");
+                }
+                recorder.start();
+                isRecording = true;
+                recordingSourceType = playerSource.src;
+                recordIndicator.style.display = "";
+            } catch (e) {
+                alert("Record error: "+e);
+            }
+        }
+
+        function stopRecording(forceDiscard) {
+            if (isLgWebos) {
+                if (isRecording && !forceDiscard) tryStopWebosRecordAndSave();
+                isRecording = false;
+                recordIndicator.style.display = "none";
+                return;
+            }
+            if (recorder) {
+                try { recorder.stop(); } catch (e) {}
+                recorder = null;
+                isRecording = false;
+            }
+            recordIndicator.style.display = "none";
+        }
+
+        function showSaveDialog(url, filename) {
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(function(){document.body.removeChild(a); window.URL.revokeObjectURL(url);},500);
+        }
+
+        if (!isLgWebos) {
+            document.getElementById("manualStartBtn").onclick = function() {
+                if (!isRecording) startRecording();
+            }
+            document.getElementById("manualStopBtn").onclick = function() {
+                if (isRecording) stopRecording(false);
+            }
+        }
+
+        document.addEventListener('keydown', function (e) {
+            if (playerIsOpen) {
+                if (
+                    e.key === "Backspace" ||
+                    e.key === "Escape" ||
+                    e.key === "VK_BACK" ||
+                    e.key === "BACK" ||
+                    e.keyCode === 461 ||
+                    e.keyCode === 412
+                ) {
+                    exitPlayer();
+                    e.preventDefault();
+                    return;
+                }
+                if (e.key === "PageUp" || e.keyCode === 33) {
+                    setPlayerSize(Math.min(playerSizeIdx + 1, 2));
+                    e.preventDefault();
+                }
+                if (e.key === "PageDown" || e.keyCode === 34) {
+                    setPlayerSize(Math.max(playerSizeIdx - 1, 0));
+                    e.preventDefault();
+                }
+                if ((e.keyCode === 167 || e.code === "MediaRecord") && !isRecording) {
+                    startRecording();
+                    e.preventDefault();
+                }
+                if ((e.keyCode === 128 || e.code === "MediaStop") && isRecording) {
+                    stopRecording(false);
+                    e.preventDefault();
+                }
+            }
+        });
+
+        playerModal.addEventListener('click', function (e) {
+            if (e.target === playerModal) exitPlayer();
+        });
+
+        inputList.setAttribute("tabindex", "0");
+
+        // Live TV Channel Scanner
+        const channelList = document.getElementById('channelList');
+        const scanChannelsBtn = document.getElementById('scanChannelsBtn');
+
+        function scanChannels() {
+            channelList.innerHTML = '<div class="btn">Scanning for channels...</div>';
+            
+            // Simulate scanning delay
+            setTimeout(() => {
+                // Mock channel data - replace with actual webOS TV API calls
+                const mockChannels = [
+                    { number: 1, name: "HDMI 1", src: "ext://hdmi:1" },
+                    { number: 2, name: "HDMI 2", src: "ext://hdmi:2" },
+                    { number: 3, name: "Cable TV", src: "atv://cable:1/dvb/1" },
+                    { number: 4, name: "News Channel", src: "atv://cable:2/dvb/2" },
+                    { number: 5, name: "Sports HD", src: "atv://cable:3/dvb/3" },
+                    { number: 6, name: "Movie Channel", src: "atv://cable:4/dvb/4" }
+                ];
+                
+                channelList.innerHTML = '';
+                mockChannels.forEach(channel => {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn';
+                    btn.textContent = `${channel.number}. ${channel.name}`;
+                    btn.dataset.src = channel.src;
+                    btn.addEventListener('click', () => {
+                        playerSource.src = channel.src;
+                        playerVideo.load();
+                        playerLabel.textContent = channel.name;
+                        playerModal.style.display = "";
+                        playerSizeIdx = 1;
+                        setPlayerSize(playerSizeIdx);
+                        playerVideo.focus();
+                        playerIsOpen = true;
+                    });
+                    channelList.appendChild(btn);
+                });
+                
+                log("Channel scan completed. Found " + mockChannels.length + " channels.");
+            }, 2000);
+        }
+
+        scanChannelsBtn.addEventListener('click', scanChannels);
+
+        // Initialize with some channels
+        scanChannels();
+
+        // Toast Generator
+        async function generateToast() {
+            try {
+                const client = await ensureClient();
+                const msg = document.getElementById("toastMsg").value || "Hello from webOS!";
+                const icon = document.getElementById("toastIcon").value || "";
+                const addOnclick = document.getElementById("toastOnclick").checked;
+                
+                let payload = { message: msg };
+                if (icon) payload.iconUrl = icon;
+                if (addOnclick) {
+                    payload.noaction = false;
+                    payload.onclick = {
+                        appId: "com.webos.app.browser",
+                        params: { target: "https://inputrunner.github.io/simple_index.html" }
+                    };
+                }
+                
+                await client.request({
+                    uri: "ssap://system.notifications/createToast",
+                    payload
+                });
+                log("Toast sent: " + JSON.stringify(payload));
+            } catch (e) {
+                log("Failed to generate toast: " + e);
+            }
+        }
+
+        // Alert Generator
+        async function generateAlert() {
+            try {
+                const client = await ensureClient();
+                const title = document.getElementById("alertTitle").value || "Alert";
+                const message = document.getElementById("alertMessage").value || "This is a test alert.";
+                const btns = document.getElementById("alertButtons").value.split(",").map(b => b.trim());
+                const buttons = btns.map(label => ({ label }));
+                
+                const payload = { title, message, buttons };
+                await client.request({
+                    uri: "ssap://system.notifications/createAlert",
+                    payload
+                });
+                log("Alert sent: " + JSON.stringify(payload));
+            } catch (e) {
+                log("Failed to generate alert: " + e);
+            }
+        }
+
+        // Client and App Logic
+        let client;
+        let currentVolume = 10;
+        let isMuted = false;
+        const isChrome79 = navigator.userAgent.includes('Chrome/79');
+        const isChrome53 = navigator.userAgent.includes('Chrome/53');
+
+        async function ensureClient() {
+            if (!client) {
+                await initClient();
+            }
+            return client;
+        }
+
+        function log(msg) {
+            const l = document.querySelector("#log");
+            l.innerText = "[" + new Date().toLocaleTimeString() + "] " + msg + "\n" + l.innerText;
+        }
+
+        async function initClient() {
+            const target = "127.0.0.1";
+            log("connecting to " + target + "...");
+            
+            if (isChrome79) {
+                client = new SSAPClient(target, window.localStorage["client-key-" + target]);
+                await client.connect();
+                log("registering...");
+                window.localStorage["client-key-" + target] = await client.register();
+            } else if (isChrome53) {
+                client = {
+                    request: function(options) {
+                        return new Promise((resolve, reject) => {
+                            var request = new XMLHttpRequest();
+                            request.open("POST", options.uri, true);
+                            request.setRequestHeader("Content-Type", "application/json");
+                            
+                            request.onload = function() {
+                                if (request.status >= 200 && request.status < 300) {
+                                    resolve(JSON.parse(request.responseText));
+                                } else {
+                                    reject(new Error(request.statusText));
+                                }
+                            };
+                            
+                            request.onerror = function() {
+                                reject(new Error("Network error"));
+                            };
+                            
+                            request.send(JSON.stringify(options.payload));
+                        });
+                    }
+                };
+                log("Using legacy XMLHttpRequest method");
+            }
+            return client;
+        }
+
+        async function pressKey(key) {
+            try {
+                const client = await ensureClient();
+                await client.request({
+                    uri: "ssap://com.webos.service.ime/sendEnterKey",
+                    payload: { key: key }
+                });
+                log("Pressed key: " + key);
+            } catch (e) {
+                log("Failed to press key: " + e);
+            }
+        }
+
+        async function launchApp(appId) {
+            try {
+                const client = await ensureClient();
+                await client.request({
+                    uri: "ssap://system.launcher/launch",
+                    payload: { id: appId }
+                });
+                log("Launched: " + appId);
+            } catch (e) {
+                log("failed: " + e);
+            }
+        }
+
+        async function volumeUp() {
+            try {
+                const client = await ensureClient();
+                currentVolume++;
+                await client.request({
+                    uri: "ssap://audio/setVolume",
+                    payload: { volume: currentVolume }
+                });
+                log("Volume set to " + currentVolume);
+            } catch (e) {
+                log("Error: " + e);
+            }
+        }
+
+        async function volumeDown() {
+            try {
+                const client = await ensureClient();
+                currentVolume = Math.max(0, currentVolume - 1);
+                await client.request({
+                    uri: "ssap://audio/setVolume",
+                    payload: { volume: currentVolume }
+                });
+                log("Volume set to " + currentVolume);
+            } catch (e) {
+                log("Error: " + e);
+            }
+        }
+
+        async function toggleMute() {
+            try {
+                const client = await ensureClient();
+                isMuted = !isMuted;
+                await client.request({
+                    uri: "ssap://audio/setMute",
+                    payload: { mute: isMuted }
+                });
+                log("Mute: " + isMuted);
+            } catch (e) {
+                log("Error: " + e);
+            }
+        }
+
+        async function playSound(soundName) {
+            try {
+                const client = await ensureClient();
+                await client.request({
+                    uri: "luna://com.webos.audio/systemsounds/playFeedback",
+                    payload: {
+                        play: true,
+                        sink: "pfeedback",
+                        name: soundName
+                    }
+                });
+                log("Played sound: " + soundName);
+            } catch (e) {
+                log("Failed to play sound: " + e);
+            }
+        }
+
+        async function activateTVHotkey(activateType) {
+            try {
+                const client = await ensureClient();
+                await client.request({
+                    uri: "luna://com.webos.service.applicationManager/launch",
+                    payload: {
+                        id: "com.webos.app.tvhotkey",
+                        params: { activateType: activateType }
+                    }
+                });
+                log("Activated TVHotkey: " + activateType);
+            } catch (e) {
+                log("Failed to activate TVHotkey: " + e);
+            }
+        }
+
+        async function takeScreenshot() {
+            try {
+                const client = await ensureClient();
+                await client.request({
+                    uri: "luna://org.webosbrew.hbchannel.service/exec",
+                    payload: {
+                        command: "/media/developer/apps/usr/palm/applications/org.set.app/screenshot-flow.sh"
+                    }
+                });
+                log("Screenshot taken");
+            } catch (e) {
+                log("Failed to take screenshot: " + e);
+            }
+        }
+
+        async function showTVHotkeyMenu() {
+            try {
+                const client = await ensureClient();
+                const buttons = [
+                    { label: "Energy Saving", onclick: { uri: "luna://com.webos.service.applicationManager/launch", params: { id: "com.webos.app.tvhotkey", params: { activateType: "energy-saving-mode" } } } },
+                    { label: "Aspect Ratio", onclick: { uri: "luna://com.webos.service.applicationManager/launch", params: { id: "com.webos.app.tvhotkey", params: { activateType: "aspect-ratio" } } } },
+                    { label: "Store Mode", onclick: { uri: "luna://com.webos.service.applicationManager/launch", params: { id: "com.webos.app.tvhotkey", params: { activateType: "store-mode" } } } },
+                    { label: "Soccer Mode", onclick: { uri: "luna://com.webos.service.applicationManager/launch", params: { id: "com.webos.app.tvhotkey", params: { activateType: "soccer-mode" } } } },
+                    { label: "Sleep Timer", onclick: { uri: "luna://com.webos.service.applicationManager/launch", params: { id: "com.webos.app.tvhotkey", params: { activateType: "sleep" } } } },
+                    { label: "Subtitle", onclick: { uri: "luna://com.webos.service.applicationManager/launch", params: { id: "com.webos.app.tvhotkey", params: { activateType: "subtitle" } } } },
+                    { label: "SIMPLINK", onclick: { uri: "luna://com.webos.service.applicationManager/launch", params: { id: "com.webos.app.tvhotkey", params: { activateType: "simplink" } } } },
+                    { label: "3D Mode", onclick: { uri: "luna://com.webos.service.applicationManager/launch", params: { id: "com.webos.app.tvhotkey", params: { activateType: "3d-mode" } } } },
+                    { label: "One Local Key", onclick: { uri: "luna://com.webos.service.applicationManager/launch", params: { id: "com.webos.app.tvhotkey", params: { activateType: "one-local-key" } } } },
+                    { label: "Local Key Menu", onclick: { uri: "luna://com.webos.service.applicationManager/launch", params: { id: "com.webos.app.tvhotkey", params: { activateType: "local-key" } } } },
+                    { label: "Multi Audio", onclick: { uri: "luna://com.webos.service.applicationManager/launch", params: { id: "com.webos.app.tvhotkey", params: { activateType: "multi-sound-setting" } } } },
+                    { label: "Audio Description", onclick: { uri: "luna://com.webos.service.applicationManager/launch", params: { id: "com.webos.app.tvhotkey", params: { activateType: "audio-description" } } } },
+                    { label: "Screenshot", onclick: { uri: "luna://org.webosbrew.hbchannel.service/exec", params: { command: "/media/developer/apps/usr/palm/applications/org.set.app/screenshot-flow.sh" } } }
+                ];
+                
+                await client.request({
+                    uri: "ssap://system.notifications/createAlert",
+                    payload: {
+                        title: "webOS TVHotkey Settings",
+                        message: "Choose a function to launch:",
+                        buttons: buttons
+                    }
+                });
+                log("TVHotkey menu shown");
+            } catch (e) {
+                log("Failed to show TVHotkey menu: " + e);
+            }
+        }
+
+        async function showBrowserMenu() {
+            try {
+                const client = await ensureClient();
+                const buttons = [
+                    { label: "BeanBrowser", onclick: { uri: "luna://com.webos.applicationManager/launch", params: { id: "com.webos.app.beanbrowser", params: { contentTarget: "https://m.youtube.com", ui: ["Exit"], x: 100, y: 350, width: 500, height: 700, overlay: true } } } },
+                    { label: "Web Browser", onclick: { uri: "luna://com.webos.applicationManager/launch", params: { id: "com.webos.app.browser" } } },
+                    { label: "Web App", onclick: { uri: "luna://com.webos.applicationManager/launch", params: { id: "com.webos.app.webapphost" } } },
+                    { label: "Watch a Video", onclick: { uri: "luna://com.webos.applicationManager/launch", params: { id: "com.webos.app.photovideo", params: { payload: [{ fullPath: "/media/developer/apps/usr/palm/applications/com.m12c.tvhotkeymenu/aww.mp4", mediaType: "VIDEO", fileName: "Chickadee", thumbnail: "/usr/palm/applications/com.webos.app.cheeringtv/areaWhite.png", lastPlayPosition: -1 }] } } } },
+                    { label: "Play a Sound", onclick: { uri: "luna://com.webos.applicationManager/launch", params: { id: "com.webos.app.music", params: { payload: [{ fullPath: "/usr/palm/applications/com.webos.app.cheeringtv/assets/sounds/mono/fireworks.wav", mediaType: "MUSIC", deviceType: "DMR", fileName: "fireworks", thumbnail: "/usr/palm/applications/com.webos.app.cheeringtv/areaWhite.png", subtitle: "", lastPlayPosition: -1, album: "", artist: "", dlnaInfo: { protocolInfo: "http-get:*:audio/mpeg:DLNA.ORG_PN=MP3;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=01500000000000000000000000000000", contentLength: "-1", duration: 0, opVal: 1, flagVal: 0, cleartextSize: "-1" } }] } } } },
+                    { label: "Screen Record", onclick: { uri: "luna://org.webosbrew.hbchannel.service/exec", params: { command: "/media/developer/apps/usr/palm/applications/com.m12c.tvhotkeymenu/start-record.sh" } } }
+                ];
+                
+                await client.request({
+                    uri: "ssap://system.notifications/createAlert",
+                    payload: {
+                        title: "Pick a Browser",
+                        message: "Select an option:",
+                        buttons: buttons
+                    }
+                });
+                log("Browser menu shown");
+            } catch (e) {
+                log("Failed to show browser menu: " + e);
+            }
+        }
+
+        async function showSoundAlert() {
+            try {
+                const client = await ensureClient();
+                const buttons = [
+                    { label: "Power On", onclick: { uri: "luna://com.webos.audio/systemsounds/playFeedback", params: { play: true, sink: "pfeedback", name: "power-on" } } },
+                    { label: "Power Off", onclick: { uri: "luna://com.webos.audio/systemsounds/playFeedback", params: { play: true, sink: "pfeedback", name: "power-off" } } },
+                    { label: "Welcome", onclick: { uri: "luna://com.webos.audio/systemsounds/playFeedback", params: { play: true, sink: "pfeedback", name: "welcome" } } },
+                    { label: "FU Fail", onclick: { uri: "luna://com.webos.audio/systemsounds/playFeedback", params: { play: true, sink: "pfeedback", name: "first-use-fail" } } },
+                    { label: "FU Success", onclick: { uri: "luna://com.webos.audio/systemsounds/playFeedback", params: { play: true, sink: "pfeedback", name: "first-use-success" } } },
+                    { label: "Input Detected", onclick: { uri: "luna://com.webos.audio/systemsounds/playFeedback", params: { play: true, sink: "pfeedback", name: "input-detected" } } },
+                    { label: "Voice Start", onclick: { uri: "luna://com.webos.audio/systemsounds/playFeedback", params: { play: true, sink: "pfeedback", name: "voicestart" } } },
+                    { label: "Voice Confirm", onclick: { uri: "luna://com.webos.audio/systemsounds/playFeedback", params: { play: true, sink: "pfeedback", name: "voiceconfirm" } } },
+                    { label: "Voice Cancel", onclick: { uri: "luna://com.webos.audio/systemsounds/playFeedback", params: { play: true, sink: "pfeedback", name: "voicecancel" } } },
+                    { label: "Loading", onclick: { uri: "luna://com.webos.audio/systemsounds/playFeedback", params: { play: true, sink: "pfeedback", name: "loading" } } }
+                ];
+                
+                await client.request({
+                    uri: "ssap://system.notifications/createAlert",
+                    payload: {
+                        title: "webOS Sound Settings",
+                        message: "Choose a Sound Effect to play:",
+                        buttons: buttons
+                    }
+                });
+                log("Sound selection alert shown");
+            } catch (e) {
+                log("Failed to show sound alert: " + e);
+            }
+        }
+
+        // Initialize everything when page loads
+        window.addEventListener('load', function() {
+            initClient().catch(e => log("Initialization error: " + e));
+            inputList.focus();
+            setActiveBtn(0);
+            scanChannels(); // Initialize Live TV channels
+        });
+    </script>
 </body>
 </html>
