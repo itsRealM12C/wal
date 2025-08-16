@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>webOS Launcher + Menus</title>
+<style>
+body{margin:0;padding:10px;font-family:Arial,sans-serif;background:#0b0b0b;color:#fff;overflow:hidden}
+#mainUI{position:absolute;top:10px;right:10px;width:260px}
+h1{font-size:20px;color:#dcdcdc;text-shadow:0 0 4px #000;margin:8px 0}
+.btn{display:block;width:100%;margin:4px 0;padding:10px;background:linear-gradient(#303030,#1a1a1a);border:2px solid #555;border-radius:10px;color:#fff;font-weight:bold;cursor:pointer;box-shadow:0 4px 6px rgba(0,0,0,.6)}
+.btn:hover{background:linear-gradient(#444,#222);border-color:#888}
+.dialog, .widget{position:absolute;background:rgba(0,0,0,.85);padding:10px;border-radius:10px;display:none;min-width:240px;z-index:99}
+.dialog h2, .widget h2{margin:0 0 6px;color:#dcdcdc;font-size:18px}
+.dialog .close-btn, .widget .close-btn{cursor:pointer;color:#f55;text-align:right;margin-top:6px}
+#tvHotkeyDialog{top:300px;right:10px}
+#inputsDialog{top:300px;right:280px}
+#logWidget{top:100px;left:50px;width:320px;max-height:300px;overflow:auto;background:rgba(255,255,255,.05);padding:6px;font-size:12px;color:#9a9a9a;white-space:pre-wrap;cursor:move}
+.section{margin-top:8px}
+.section small{opacity:.8}
+.input-btn{display:inline-block;margin:2px;padding:6px 8px;background:#222;border:1px solid #555;color:#fff;border-radius:6px;cursor:pointer}
+.input-btn:hover{background:#333}
+</style>
+</head>
+<body>
+
+<div id="mainUI">
+<h1>📺 Launcher</h1>
+<button class="btn" onclick="launchApp('com.webos.app.cheeringtv')">Cheering TV</button>
+<button class="btn" onclick="launchApp('com.palm.app.settings')">Settings</button>
+<button class="btn" onclick="launchApp('com.webos.app.installation')">Secret Menu</button>
+<button class="btn" onclick="launchApp('com.webos.app.discovery')">LG Store</button>
+
+<div class="section">
+<h1>🔊 Volume</h1>
+<input type="number" id="volumeInput" style="width:60px;margin-right:4px" value="10">
+<button class="btn" onclick="setVolumeFromInput()">Set</button>
+<button class="btn" onclick="volumeUp()">Volume Up</button>
+<button class="btn" onclick="volumeDown()">Volume Down</button>
+<button class="btn" onclick="toggleMute()">Mute</button>
+</div>
+
+<h1>🎛️ Menus</h1>
+<button class="btn" id="tvHotkeyMenuBtn">TVHotkey Menu</button>
+<button class="btn" id="inputsMenuBtn">Inputs</button>
+<button class="btn" id="logMenuBtn">Log Widget</button>
+</div>
+
+<!-- Dialogs -->
+<div class="dialog" id="tvHotkeyDialog"><h2>TVHotkey Menu</h2><div id="tvHotkeyButtons"></div><div class="close-btn" onclick="closeDialog('tvHotkeyDialog')">✕ Close</div></div>
+<div class="dialog" id="inputsDialog"><h2>Inputs</h2><div id="inputButtons"></div><div class="close-btn" onclick="closeDialog('inputsDialog')">✕ Close</div></div>
+<div class="widget" id="logWidget"><h2>Log</h2><pre id="logContent"></pre><div class="close-btn" onclick="document.getElementById('logWidget').style.display='none'">✕ Close</div></div>
+
+<script>
+let client,currentVolume=10,isMuted=false;
+
+/* Logging */
+function log(msg){const L=document.getElementById('logContent');L.textContent='['+new Date().toLocaleTimeString()+'] '+msg+'\n'+L.textContent}
+
+/* SSAP client */
+async function initClient(){if(client)return;client=new SSAPClient('127.0.0.1',localStorage['client-key-127.0.0.1']);await client.connect();localStorage['client-key-127.0.0.1']=await client.register();}
+
+function sendReq(uri,payload={}){
+  const ua=navigator.userAgent;const isC53=ua.includes('Chrome/53');
+  if(isC53 && window.webOS && webOS.service){let [service,method]=uri.replace('ssap://','').split('/');webOS.service.request('luna://'+service,{method,payload,onSuccess:()=>log('OK '+method),onFailure:e=>log('ERR '+(e.errorText||JSON.stringify(e)))});}
+  else{(async()=>{try{if(!client)await initClient();await client.request({uri,payload});log('OK '+uri);}catch(e){log('ERR '+e)}})();}
+}
+
+/* Core actions */
+function launchApp(id){sendReq('ssap://system.launcher/launch',{id});}
+function volumeUp(){currentVolume++;sendReq('ssap://audio/setVolume',{volume:currentVolume});document.getElementById('volumeInput').value=currentVolume;log('Volume '+currentVolume);}
+function volumeDown(){currentVolume--;sendReq('ssap://audio/setVolume',{volume:currentVolume});document.getElementById('volumeInput').value=currentVolume;log('Volume '+currentVolume);}
+function toggleMute(){isMuted=!isMuted;sendReq('ssap://audio/setMute',{mute:isMuted});log('Mute '+isMuted);}
+function setVolumeFromInput(){let v=parseInt(document.getElementById('volumeInput').value,10);if(!isNaN(v)){currentVolume=v;sendReq('ssap://audio/setVolume',{volume:currentVolume});log('Volume set to '+currentVolume);}}
+
+/* Draggable dialogs */
+function dragElement(el){let pos1=0,pos2=0,pos3=0,pos4=0;el.onmousedown=dragMouseDown;
+function dragMouseDown(e){e=e||window.event;e.preventDefault();pos3=e.clientX;pos4=e.clientY;document.onmouseup=closeDrag;document.onmousemove=elementDrag;}
+function elementDrag(e){e=e||window.event;e.preventDefault();pos1=pos3-e.clientX;pos2=pos4-e.clientY;pos3=e.clientX;pos4=e.clientY;el.style.top=(el.offsetTop-pos2)+'px';el.style.left=(el.offsetLeft-pos1)+'px';}
+function closeDrag(){document.onmouseup=null;document.onmousemove=null;}}  
+
+['tvHotkeyDialog','inputsDialog','logWidget'].forEach(id=>dragElement(document.getElementById(id)));
+
+/* TVHotkey buttons */
+const tvHotkeyButtons=[
+  {label:'Home',onclick:'ssap://system.launcher/launch',params:{id:'com.webos.app.home'}},
+  {label:'Full Home',onclick:'ssap://system.launcher/launch',params:{id:'com.webos.app.fullhome'}},
+  {label:'Energy Saving',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'energy-saving-mode'}}},
+  {label:'Aspect Ratio',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'aspect-ratio'}}},
+  {label:'Store Mode',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'store-mode'}}},
+  {label:'Soccer Mode',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'soccer-mode'}}},
+  {label:'Sleep Timer',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'sleep'}}},
+  {label:'Subtitle',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'subtitle'}}},
+  {label:'SIMPLINK',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'simplink'}}},
+  {label:'3D Mode',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'3d-mode'}}},
+  {label:'One Local Key',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'one-local-key'}}},
+  {label:'Local Key Menu',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'local-key'}}},
+  {label:'Multi Audio',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'multi-sound-setting'}}},
+  {label:'Audio Description',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'audio-description'}}}
+];
+document.getElementById('tvHotkeyMenuBtn').onclick=function(){
+  const c=document.getElementById('tvHotkeyButtons');c.innerHTML='';
+  tvHotkeyButtons.forEach(b=>{const btn=document.createElement('button');btn.className='btn';btn.textContent=b.label;btn.onclick=()=>sendReq(b.onclick,b.params);c.appendChild(btn);});
+  document.getElementById('tvHotkeyDialog').style.display='block';
+};
+
+/* Inputs dialog */
+const inputList=[
+  {label:'HDMI 1',src:'ext://hdmi:1'},{label:'HDMI 2',src:'ext://hdmi:2'},{label:'HDMI 3',src:'ext://hdmi:3'},{label:'HDMI 4',src:'ext://hdmi:4'},
+  {label:'Component 1',src:'ext://comp:1'},{label:'AV 1',src:'ext://av:1'},{label:'AV 2',src:'ext://av:2'},{label:'SCART 1',src:'ext://scart:1'},
+  {label:'Live TV 1',src:'atv://cable:1/dvb/1'},{label:'Live TV 2',src:'atv://cable:2/dvb/2'}
+];
+document.getElementById('inputsMenuBtn').onclick=function(){
+  const c=document.getElementById('inputButtons');c.innerHTML='';
+  inputList.forEach(b=>{const btn=document.createElement('button');btn.className='input-btn';btn.textContent=b.label;btn.dataset.src=b.src;btn.onclick=()=>{const v=document.createElement('video');v.autoplay=true;v.style.width='100%';v.style.height='100%';v.src=b.src;document.body.appendChild(v);log('Playing '+b.label);};c.appendChild(btn);});
+  document.getElementById('inputsDialog').style.display='block';
+};
+
+/* Log widget toggle */
+document.getElementById('logMenuBtn').onclick=function(){document.getElementById('logWidget').style.display='block';};
+
+function closeDialog(id){document.getElementById(id).style.display='none';}
+</script>
+<script src="https://dropbox.inf.re/webos-gfn/wsproxy.js"></script>
+<script src="https://dropbox.inf.re/webos-gfn/client.js"></script>
+</body>
+</html>
