@@ -146,7 +146,7 @@
   border-color:#888;
 }</style>
 
-<script
+<script>
 // Make Inputs panel draggable
 makeDraggable(document.getElementById("inputsUI"));
 
@@ -553,6 +553,33 @@ window.addEventListener('load', ()=> {
   {label:'Audio Description',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'audio-description'}}},
   {label:'Screenshot',onclick:'luna://org.webosbrew.hbchannel.service/exec',params:{command:'/media/developer/apps/usr/palm/applications/org.set.app/screenshot-flow.sh'}}
 ];
+  const pcmSounds=[
+  {label:'Power On',name:'power-on'},
+  {label:'Power Off',name:'power-off'},
+  {label:'Welcome',name:'welcome'},
+  {label:'FU Fail',name:'first-use-fail'},
+  {label:'FU Success',name:'first-use-success'},
+  {label:'Input Detected',name:'input-detected'},
+  {label:'Voice Start',name:'voicestart'},
+  {label:'Voice Confirm',name:'voiceconfirm'},
+  {label:'Voice Cancel',name:'voicecancel'},
+  {label:'Loading',name:'loading'}
+];
+
+document.getElementById('pcmBtn').onclick=()=>{
+  const container=document.getElementById('pcmButtons');
+  container.innerHTML='';
+  pcmSounds.forEach(s=>{
+    const b=document.createElement('button');
+    b.className='btn';
+    b.textContent=s.label;
+    b.onclick=()=>sendReq('ssap://com.webos.audio/systemsounds/playFeedback',{
+      play:true,sink:'pfeedback',name:s.name
+    });
+    container.appendChild(b);
+  });
+  document.getElementById('pcmDialog').style.display='block';
+};
 </script>
 
 
