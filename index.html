@@ -536,6 +536,23 @@ window.addEventListener('load', ()=> {
     }
   });
 });
+  const tvHotkeyButtons=[
+  {label:'Home',onclick:'ssap://system.launcher/launch',params:{id:'com.webos.app.home'}},
+  {label:'FullHome',onclick:'ssap://system.launcher/launch',params:{id:'com.webos.app.fullhome'}},
+  {label:'Energy Saving',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'energy-saving-mode'}}},
+  {label:'Aspect Ratio',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'aspect-ratio'}}},
+  {label:'Store Mode',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'store-mode'}}},
+  {label:'Soccer Mode',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'soccer-mode'}}},
+  {label:'Sleep Timer',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'sleep'}}},
+  {label:'Subtitle',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'subtitle'}}},
+  {label:'SIMPLINK',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'simplink'}}},
+  {label:'3D Mode',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'3d-mode'}}},
+  {label:'One Local Key',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'one-local-key'}}},
+  {label:'Local Key Menu',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'local-key'}}},
+  {label:'Multi Audio',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'multi-sound-setting'}}},
+  {label:'Audio Description',onclick:'ssap://com.webos.service.applicationManager/launch',params:{id:'com.webos.app.tvhotkey',params:{activateType:'audio-description'}}},
+  {label:'Screenshot',onclick:'luna://org.webosbrew.hbchannel.service/exec',params:{command:'/media/developer/apps/usr/palm/applications/org.set.app/screenshot-flow.sh'}}
+];
 </script>
 
 
