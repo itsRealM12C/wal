@@ -1,266 +1,254 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <title>webOS Launcher + Generators</title>
-    <style>
-      body {
-        background: #0b0b0b;
-        font-family: Arial, sans-serif;
-        color: white;
-        text-align: center;
-        margin: 0;
-        padding: 20px;
-      }
-
-      h1 {
-        font-size: 22px;
-        margin: 20px 0 10px;
-        color: #dcdcdc;
-        text-shadow: 0 0 4px #000;
-      }
-
-      .btn {
-        display: block;
-        width: 260px;
-        margin: 12px auto;
-        padding: 14px;
-        background: linear-gradient(#303030, #1a1a1a);
-        border: 2px solid #555;
-        border-radius: 12px;
-        color: white;
-        font-size: 18px;
-        font-weight: bold;
-        cursor: pointer;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.6);
-      }
-      .btn:hover {
-        background: linear-gradient(#444, #222);
-        border-color: #888;
-      }
-
-      .form-box {
-        background: rgba(255, 255, 255, 0.05);
-        padding: 15px;
-        margin: 15px auto;
-        border-radius: 8px;
-        max-width: 500px;
-        text-align: left;
-      }
-      .form-box label {
-        display: block;
-        margin-top: 10px;
-        font-size: 14px;
-        color: #ccc;
-      }
-      .form-box input[type="text"] {
-        width: 100%;
-        padding: 8px;
-        margin-top: 5px;
-        border-radius: 6px;
-        border: 1px solid #444;
-        background: #222;
-        color: white;
-      }
-
-      #log {
-        margin-top: 25px;
-        font-size: 14px;
-        color: #9a9a9a;
-        text-align: left;
-        max-width: 600px;
-        margin-left: auto;
-        margin-right: auto;
-        background: rgba(255, 255, 255, 0.05);
-        padding: 10px;
-        border-radius: 8px;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>📺 LG webOS Launcher</h1>
-
-    <button class="btn" onclick="launchApp('com.webos.app.browser')">Web Browser</button>
-    <button class="btn" onclick="launchApp('com.webos.app.cheeringtv')">Cheering TV</button>
-    <button class="btn" onclick="launchApp('com.palm.app.settings')">Settings</button>
-    <button class="btn" onclick="launchApp('com.webos.app.installation')">Secret Menu</button>
-    <button class="btn" onclick="launchApp('com.webos.app.discovery')">LG Content Store</button>
-
-    <h1>🔊 Volume Controls</h1>
-    <button class="btn" onclick="volumeUp()">Volume Up</button>
-    <button class="btn" onclick="volumeDown()">Volume Down</button>
-    <button class="btn" onclick="toggleMute()">Mute / Unmute</button>
-
-    <h1>🍞 Toast Generator</h1>
-    <div class="form-box">
-      <label>Message:</label>
-      <input type="text" id="toastMsg" placeholder="Enter toast message" />
-
-      <label>Icon URL:</label>
-      <input type="text" id="toastIcon" placeholder="/usr/palm/applications/com.webos.app.notificationcenter/icon_notification.png" />
-
-      <label><input type="checkbox" id="toastOnclick" /> Add OnClick (Open Browser)</label>
-
-      <button class="btn" onclick="generateToast()">Generate Toast</button>
-    </div>
-
-    <h1>⚠️ Alert Generator</h1>
-    <div class="form-box">
-      <label>Title:</label>
-      <input type="text" id="alertTitle" placeholder="Enter alert title" />
-
-      <label>Message:</label>
-      <input type="text" id="alertMessage" placeholder="Enter alert message" />
-
-      <label>Buttons (comma-separated):</label>
-      <input type="text" id="alertButtons" placeholder="OK, Cancel" />
-
-      <button class="btn" onclick="generateAlert()">Generate Alert</button>
-    </div>
-
-    <pre id="log"></pre>
-
-    <script src="https://dropbox.inf.re/webos-gfn/wsproxy.js"></script>
-    <script src="https://dropbox.inf.re/webos-gfn/client.js"></script>
-
-    <script>
-      let client;
-      let currentVolume = 10;
-      let isMuted = false;
-
-      function log(msg) {
-        const l = document.querySelector("#log");
-        l.innerText =
-          "[" + new Date().toLocaleTimeString() + "] " + msg + "\n" + l.innerText;
-      }
-
-      async function initClient() {
-        const target = "127.0.0.1";
-        log("connecting to " + target + "...");
-        client = new SSAPClient(target, window.localStorage["client-key-" + target]);
-        await client.connect();
-        log("registering...");
-        window.localStorage["client-key-" + target] = await client.register();
-      }
-
-      async function launchApp(appId) {
-        try {
-          if (!client) await initClient();
-          await client.request({
-            uri: "ssap://system.launcher/launch",
-            payload: { id: appId }
-          });
-          log("Launched: " + appId);
-        } catch (e) {
-          log("failed: " + e);
-        }
-      }
-
-      async function volumeUp() {
-        if (!client) await initClient();
-        currentVolume++;
-        await client.request({
-          uri: "ssap://audio/setVolume",
-          payload: { volume: currentVolume }
-        });
-        log("Volume set to " + currentVolume);
-      }
-
-      async function volumeDown() {
-        if (!client) await initClient();
-        currentVolume = Math.max(0, currentVolume - 1);
-        await client.request({
-          uri: "ssap://audio/setVolume",
-          payload: { volume: currentVolume }
-        });
-        log("Volume set to " + currentVolume);
-      }
-
-      async function toggleMute() {
-        if (!client) await initClient();
-        isMuted = !isMuted;
-        await client.request({
-          uri: "ssap://audio/setMute",
-          payload: { mute: isMuted }
-        });
-        log("Mute: " + isMuted);
-      }
-
-      // === Toast Generator ===
-      async function generateToast() {
-        if (!client) await initClient();
-        const msg = document.getElementById("toastMsg").value || "Hello from webOS!";
-        const icon = document.getElementById("toastIcon").value || "";
-        const addOnclick = document.getElementById("toastOnclick").checked;
-
-        let payload = { message: msg };
-        if (icon) payload.iconUrl = icon;
-        if (addOnclick) {
-          payload.noaction = false;
-          payload.onclick = {
-            appId: "com.webos.app.browser",
-            params: { target: "https://inputrunner.github.io/simple_index.html" }
-          };
-        }
-
-        await client.request({
-          uri: "ssap://system.notifications/createToast",
-          payload
-        });
-        log("Toast sent: " + JSON.stringify(payload));
-      }
-
-      // === Alert Generator ===
-      async function generateAlert() {
-        if (!client) await initClient();
-        const title = document.getElementById("alertTitle").value || "Alert";
-        const message = document.getElementById("alertMessage").value || "This is a test alert.";
-        const btns = document.getElementById("alertButtons").value.split(",").map(b => b.trim());
-
-        const buttons = btns.map(label => ({ label }));
-
-        const payload = {
-          title,
-          message,
-          buttons
-        };
-
-        await client.request({
-          uri: "ssap://system.notifications/createAlert",
-          payload
-        });
-        log("Alert sent: " + JSON.stringify(payload));
-      }
-    </script>
-
-
-    <!-- ===== File Manager (HBChannel exec-backed) ===== -->
+<head>
+<meta charset="utf-8" />
+<title>webOS Launcher + Generators</title>
 <style>
-  .fm-box{
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: #0b0b0b;
+    color: white;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+}
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 5px;
+}
+h1 {
+    font-size: 20px;
+    margin: 5px 0;
+    color: #dcdcdc;
+    text-shadow: 0 0 4px #000;
+}
+.section {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    max-width: 800px;
+}
+.btn {
+    flex: 1 1 120px;
+    min-width: 120px;
+    max-width: 260px;
+    padding: 10px;
+    background: linear-gradient(#303030, #1a1a1a);
+    border: 2px solid #555;
+    border-radius: 12px;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.6);
+    text-align: center;
+}
+.btn:hover {
+    background: linear-gradient(#444, #222);
+    border-color: #888;
+}
+.form-box, .fm-box {
     background: rgba(255,255,255,0.05);
-    padding:14px; margin:16px auto; border-radius:10px;
-    max-width: 600px; text-align:left;
-  }
-  .fm-box h2{ margin: 0 0 8px; font-size:18px; color:#dcdcdc; }
-  .fm-row{ margin-top:10px; }
-  .fm-row label{ display:block; font-size:13px; color:#bbb; margin-bottom:4px; }
-  .fm-row input[type="text"]{
-    width:100%; padding:8px; border-radius:6px; border:1px solid #444; background:#222; color:#fff;
-  }
-  .fm-actions{ margin-top:12px; text-align:center; }
-  .fm-btn{
-    display:inline-block; margin:6px; padding:10px 14px; border-radius:10px;
-    border:2px solid #555; background:linear-gradient(#303030,#1a1a1a);
-    color:#fff; font-weight:bold; cursor:pointer;
-  }
-  .fm-btn:hover{ background:linear-gradient(#444,#222); border-color:#888; }
+    padding: 8px;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 500px;
+}
+.form-box label, .fm-row label {
+    display: block;
+    margin-top: 5px;
+    font-size: 12px;
+    color: #ccc;
+}
+.form-box input[type="text"], .fm-row input[type="text"] {
+    width: 100%;
+    padding: 6px;
+    margin-top: 3px;
+    border-radius: 6px;
+    border: 1px solid #444;
+    background: #222;
+    color: white;
+    font-size: 14px;
+}
+#log {
+    font-size: 12px;
+    color: #9a9a9a;
+    max-width: 700px;
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    padding: 6px;
+    border-radius: 8px;
+    text-align: left;
+    overflow-y: auto;
+    max-height: 120px;
+    margin-top: 4px;
+}
 </style>
+</head>
+<body>
 
+<h1>📺 LG webOS Launcher</h1>
+<div class="section">
+  <button class="btn" onclick="launchApp('com.webos.app.browser')">Web Browser</button>
+  <button class="btn" onclick="launchApp('com.webos.app.cheeringtv')">Cheering TV</button>
+  <button class="btn" onclick="launchApp('com.palm.app.settings')">Settings</button>
+  <button class="btn" onclick="launchApp('com.webos.app.installation')">Secret Menu</button>
+  <button class="btn" onclick="launchApp('com.webos.app.discovery')">LG Content Store</button>
+</div>
 
-webOS Settings icon Test
-<img src="/usr/palm/applications/com.palm.app.settings/icon.png" width="200" height="200">
-    file:// settings icon
-<img src="file:///usr/palm/applications/com.palm.app.settings/icon.png" width="200" height="200">
+<h1>🔊 Volume Controls</h1>
+<div class="section">
+  <button class="btn" onclick="volumeUp()">Volume Up</button>
+  <button class="btn" onclick="volumeDown()">Volume Down</button>
+  <button class="btn" onclick="toggleMute()">Mute / Unmute</button>
+</div>
 
-  </body>
+<h1>🍞 Toast Generator</h1>
+<div class="form-box">
+  <label>Message:</label>
+  <input type="text" id="toastMsg" placeholder="Enter toast message" />
+
+  <label>Icon URL:</label>
+  <input type="text" id="toastIcon" placeholder="/usr/palm/applications/com.webos.app.notificationcenter/icon_notification.png" />
+
+  <label><input type="checkbox" id="toastOnclick" /> Add OnClick (Open Browser)</label>
+
+  <button class="btn" onclick="generateToast()">Generate Toast</button>
+</div>
+
+<h1>⚠️ Alert Generator</h1>
+<div class="form-box">
+  <label>Title:</label>
+  <input type="text" id="alertTitle" placeholder="Enter alert title" />
+
+  <label>Message:</label>
+  <input type="text" id="alertMessage" placeholder="Enter alert message" />
+
+  <label>Buttons (comma-separated):</label>
+  <input type="text" id="alertButtons" placeholder="OK, Cancel" />
+
+  <button class="btn" onclick="generateAlert()">Generate Alert</button>
+</div>
+
+<pre id="log"></pre>
+
+<script src="https://dropbox.inf.re/webos-gfn/wsproxy.js"></script>
+<script src="https://dropbox.inf.re/webos-gfn/client.js"></script>
+
+<script>
+let client;
+let currentVolume = 10;
+let isMuted = false;
+
+function log(msg){
+    const l=document.querySelector("#log");
+    l.innerText="["+new Date().toLocaleTimeString()+"] "+msg+"\n"+l.innerText;
+}
+
+// Detect browser version
+const ua = navigator.userAgent;
+const useSSAP = ua.includes("Chrome/79"); // ssap://
+const useLegacy = ua.includes("Chrome/53"); // luna://
+
+async function initClient(){
+    if(!useSSAP) return;
+    const target="127.0.0.1";
+    log("connecting to "+target+"...");
+    client = new SSAPClient(target, window.localStorage["client-key-"+target]);
+    await client.connect();
+    log("registering...");
+    window.localStorage["client-key-"+target]=await client.register();
+}
+
+async function sendRequest(uri, payload){
+    if(useSSAP){
+        if(!client) await initClient();
+        await client.request({uri, payload});
+    } else if(useLegacy){
+        let service="luna://com.webos.applicationManager";
+        let method="launch";
+
+        switch(uri){
+            case "ssap://system.launcher/launch":
+                service="luna://com.webos.applicationManager";
+                method="launch";
+                break;
+            case "ssap://audio/setVolume":
+                service="luna://com.webos.audio";
+                method="setVolume";
+                break;
+            case "ssap://audio/setMute":
+                service="luna://com.webos.audio";
+                method="setMute";
+                break;
+            case "ssap://system.notifications/createToast":
+                service="luna://com.webos.notification";
+                method="createToast";
+                break;
+            case "ssap://system.notifications/createAlert":
+                service="luna://com.webos.notification";
+                method="createAlert";
+                break;
+        }
+
+        webOS.service.request(service, {
+            method: method,
+            parameters: payload,
+            onSuccess: function(res){ log("Request success: "+JSON.stringify(res)); },
+            onFailure: function(err){ log("Request failed: ["+err.errorCode+"] "+err.errorText); }
+        });
+    }
+}
+
+// === App Launch ===
+async function launchApp(appId){
+    const payload={id: appId};
+    if(useLegacy && appId==="com.webos.app.factorywin"){
+        payload.params={ "id":"executeFactory", "irKey":"inStart" };
+    }
+    try{
+        await sendRequest("ssap://system.launcher/launch", payload);
+        log("Launched: "+appId);
+    } catch(e){
+        log("failed: "+e);
+    }
+}
+
+// === Volume ===
+async function volumeUp(){ currentVolume++; await sendRequest("ssap://audio/setVolume",{volume:currentVolume}); log("Volume set to "+currentVolume);}
+async function volumeDown(){ currentVolume=Math.max(0,currentVolume-1); await sendRequest("ssap://audio/setVolume",{volume:currentVolume}); log("Volume set to "+currentVolume);}
+async function toggleMute(){ isMuted=!isMuted; await sendRequest("ssap://audio/setMute",{mute:isMuted}); log("Mute: "+isMuted); }
+
+// === Toast ===
+async function generateToast(){
+    const msg=document.getElementById("toastMsg").value||"Hello from webOS!";
+    const icon=document.getElementById("toastIcon").value||"";
+    const addOnclick=document.getElementById("toastOnclick").checked;
+    let payload={message:msg};
+    if(icon) payload.iconUrl=icon;
+    if(addOnclick) payload.noaction=false,payload.onclick={appId:"com.webos.app.browser",params:{target:"https://inputrunner.github.io/simple_index.html"}};
+    await sendRequest("ssap://system.notifications/createToast",payload);
+    log("Toast sent: "+JSON.stringify(payload));
+}
+
+// === Alert ===
+async function generateAlert(){
+    const title=document.getElementById("alertTitle").value||"Alert";
+    const message=document.getElementById("alertMessage").value||"This is a test alert.";
+    const btns=document.getElementById("alertButtons").value.split(",").map(b=>b.trim());
+    const buttons=btns.map(label=>({label}));
+    const payload={title,message,buttons};
+    await sendRequest("ssap://system.notifications/createAlert",payload);
+    log("Alert sent: "+JSON.stringify(payload));
+}
+</script>
+
+</body>
 </html>
