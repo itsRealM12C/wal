@@ -23,7 +23,22 @@ input{width:60px;padding:4px;margin-right:6px;border-radius:4px;border:1px solid
 
 <h1>PCM Sounds</h1>
 <div id="pcmButtons"></div>
-
+<div class="dialog" id="pcmDialog">
+  <h2>PCM Sounds</h2>
+  <div id="pcmButtons">
+    <button class="btn" onclick="sendReq('ssap://com.webos.audio/systemsounds/playFeedback',{play:true,sink:'pfeedback',name:'power-on'})">Power On</button>
+    <button class="btn" onclick="sendReq('ssap://com.webos.audio/systemsounds/playFeedback',{play:true,sink:'pfeedback',name:'power-off'})">Power Off</button>
+    <button class="btn" onclick="sendReq('ssap://com.webos.audio/systemsounds/playFeedback',{play:true,sink:'pfeedback',name:'welcome'})">Welcome</button>
+    <button class="btn" onclick="sendReq('ssap://com.webos.audio/systemsounds/playFeedback',{play:true,sink:'pfeedback',name:'first-use-fail'})">FU Fail</button>
+    <button class="btn" onclick="sendReq('ssap://com.webos.audio/systemsounds/playFeedback',{play:true,sink:'pfeedback',name:'first-use-success'})">FU Success</button>
+    <button class="btn" onclick="sendReq('ssap://com.webos.audio/systemsounds/playFeedback',{play:true,sink:'pfeedback',name:'input-detected'})">Input Detected</button>
+    <button class="btn" onclick="sendReq('ssap://com.webos.audio/systemsounds/playFeedback',{play:true,sink:'pfeedback',name:'voicestart'})">Voice Start</button>
+    <button class="btn" onclick="sendReq('ssap://com.webos.audio/systemsounds/playFeedback',{play:true,sink:'pfeedback',name:'voiceconfirm'})">Voice Confirm</button>
+    <button class="btn" onclick="sendReq('ssap://com.webos.audio/systemsounds/playFeedback',{play:true,sink:'pfeedback',name:'voicecancel'})">Voice Cancel</button>
+    <button class="btn" onclick="sendReq('ssap://com.webos.audio/systemsounds/playFeedback',{play:true,sink:'pfeedback',name:'loading'})">Loading</button>
+  </div>
+  <div class="close-btn" onclick="closeDialog('pcmDialog')">✕ Close</div>
+</div>
 <script>
 let currentVolume=10, isMuted=false;
 
@@ -55,6 +70,36 @@ function log(msg){
 }
 
 // --- Volume actions
+// --- Logging helper
+function log(msg){
+  const L=document.getElementById('log');
+  L.textContent='['+new Date().toLocaleTimeString()+'] '+msg+'\n'+L.textContent;
+}
+
+// --- Universal SSAP/Luna sender
+let client=null;
+async function sendReq(uri,payload={}){
+  const ua=navigator.userAgent;
+  const isC53=ua.includes('Chrome/53');
+  if(isC53 && window.webOS && webOS.service){
+    const [service,method]=uri.replace(/^ssap:\/\//,'').split('/');
+    webOS.service.request('luna://'+service,{
+      method,
+      parameters:payload,
+      onSuccess:()=>log('OK '+method),
+      onFailure:e=>log('ERR '+(e.errorText||JSON.stringify(e)))
+    });
+  } else {
+    if(!client) client=new SSAPClient('127.0.0.1',localStorage['client-key-127.0.0.1']);
+    if(!client.isConnected) await client.connect();
+    localStorage['client-key-127.0.0.1']=await client.register();
+    await client.request({uri,payload});
+    log('OK '+uri);
+  }
+}
+
+// --- Volume
+let currentVolume=10,isMuted=false;
 function setVolume(vol){
   currentVolume=vol;
   sendReq('ssap://audio/setVolume',{volume:currentVolume});
@@ -64,6 +109,53 @@ function volumeUp(){setVolume(currentVolume+1);}
 function volumeDown(){setVolume(Math.max(0,currentVolume-1));}
 function toggleMute(){isMuted=!isMuted; sendReq('ssap://audio/setMute',{mute:isMuted}); log('Mute '+isMuted);}
 
+// --- Volume setter input + set button
+const volInput=document.createElement('input');
+volInput.type='number';
+volInput.style.width='60px';
+volInput.value=currentVolume;
+const setBtn=document.createElement('button');
+setBtn.className='btn';
+setBtn.textContent='Set';
+setBtn.onclick=()=>{ 
+  const val=parseInt(volInput.value);
+  if(!isNaN(val)) setVolume(val); 
+};
+const mainUI=document.getElementById('mainUI');
+mainUI.appendChild(volInput);
+mainUI.appendChild(setBtn);
+
+// --- PCM Sounds
+const pcmSounds=[
+  {label:'Power On',name:'power-on'},
+  {label:'Power Off',name:'power-off'},
+  {label:'Welcome',name:'welcome'},
+  {label:'FU Fail',name:'first-use-fail'},
+  {label:'FU Success',name:'first-use-success'},
+  {label:'Input Detected',name:'input-detected'},
+  {label:'Voice Start',name:'voicestart'},
+  {label:'Voice Confirm',name:'voiceconfirm'},
+  {label:'Voice Cancel',name:'voicecancel'},
+  {label:'Loading',name:'loading'}
+];
+const pcmContainer=document.getElementById('pcmButtons');
+
+// --- Pre-create PCM buttons (instant click)
+pcmSounds.forEach(s=>{
+  const b=document.createElement('button');
+  b.className='btn';
+  b.textContent=s.label;
+  b.onclick=()=>sendReq('ssap://com.webos.audio/systemsounds/playFeedback',{
+    play:true,sink:'pfeedback',name:s.name
+  });
+  pcmContainer.appendChild(b);
+});
+
+// --- Show PCM dialog instantly
+document.getElementById('pcmBtn').onclick=()=>{ 
+  document.getElementById('pcmDialog').style.display='block';
+};
+  
 // --- PCM Sounds
 const pcmSounds=[
   {label:'Power On',name:'power-on'},
