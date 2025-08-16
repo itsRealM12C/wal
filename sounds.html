@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Volume + PCM</title>
+<style>
+body{margin:10px;font-family:Arial,sans-serif;background:#0b0b0b;color:#fff;}
+.btn{display:block;width:180px;margin:4px 0;padding:8px;background:#303;border:2px solid #555;border-radius:8px;color:#fff;cursor:pointer;}
+input{width:60px;padding:4px;margin-right:6px;border-radius:4px;border:1px solid #555;background:#111;color:#fff;}
+#pcmButtons{margin-top:10px;}
+</style>
+</head>
+<body>
+<h1>Volume Control</h1>
+<button class="btn" onclick="volumeUp()">Volume +</button>
+<button class="btn" onclick="volumeDown()">Volume -</button>
+<input type="text" id="volInput" placeholder="0">
+<button class="btn" onclick="setVolume()">Set</button>
+
+<h1>PCM Sounds</h1>
+<div id="pcmButtons"></div>
+
+<script>
+let currentVolume=10,isMuted=false;
+
+function sendReq(uri,payload={}) {
+  if(window.webOS && webOS.service){
+    const {service,method}=uri.startsWith('luna://')?{service:uri.split('/')[2],method:uri.split('/').slice(3).join('/')}:{service:'com.webos.audio',method:'setVolume'};
+    webOS.service.request('luna://'+service,{method,payload,onSuccess:()=>console.log('OK '+method),onFailure:e=>console.log('ERR '+JSON.stringify(e))});
+  }else{console.log('REQ',uri,payload);}
+}
+
+// --- Volume ---
+function volumeUp(){currentVolume++; sendReq('ssap://audio/setVolume',{volume:currentVolume}); console.log('Volume',currentVolume);}
+function volumeDown(){currentVolume--; sendReq('ssap://audio/setVolume',{volume:currentVolume}); console.log('Volume',currentVolume);}
+function setVolume(){let val=parseInt(document.getElementById('volInput').value);if(!isNaN(val)){currentVolume=val; sendReq('ssap://audio/setVolume',{volume:currentVolume}); console.log('Volume set to',currentVolume);}}
+
+// --- PCM Sounds ---
+const pcmSounds=[
+{label:'Power On',name:'power-on'},{label:'Power Off',name:'power-off'},{label:'Welcome',name:'welcome'},
+{label:'FU Fail',name:'first-use-fail'},{label:'FU Success',name:'first-use-success'},
+{label:'Input Detected',name:'input-detected'},{label:'Voice Start',name:'voicestart'},
+{label:'Voice Confirm',name:'voiceconfirm'},{label:'Voice Cancel',name:'voicecancel'},
+{label:'Loading',name:'loading'}
+];
+
+const pcmContainer=document.getElementById('pcmButtons');
+pcmSounds.forEach(s=>{
+  const b=document.createElement('button');
+  b.className='btn';
+  b.textContent=s.label;
+  b.onclick=()=>sendReq('ssap://com.webos.audio/systemsounds/playFeedback',{
+    play:true,sink:'pfeedback',name:s.name
+  });
+  pcmContainer.appendChild(b);
+});
+</script>
+</body>
+</html>
