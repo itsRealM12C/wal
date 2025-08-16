@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>webOS Launcher + Generators</title>
+<style>
+body{background:#0b0b0b;color:white;font-family:Arial,sans-serif;margin:0;padding:20px;text-align:center}
+h1{font-size:22px;margin:20px 0 10px;color:#dcdcdc;text-shadow:0 0 4px #000}
+.btn{display:block;width:260px;margin:12px auto;padding:14px;background:linear-gradient(#303030,#1a1a1a);border:2px solid #555;border-radius:12px;color:white;font-size:18px;font-weight:bold;cursor:pointer;box-shadow:0 4px 6px rgba(0,0,0,.6)}
+.btn:hover{background:linear-gradient(#444,#222);border-color:#888}
+.form-box{background:rgba(255,255,255,.05);padding:15px;margin:15px auto;border-radius:8px;max-width:500px;text-align:left}
+.form-box label{display:block;margin-top:10px;font-size:14px;color:#ccc}
+.form-box input[type=text]{width:100%;padding:8px;margin-top:5px;border-radius:6px;border:1px solid #444;background:#222;color:white}
+#log{position:fixed;bottom:10px;right:10px;max-width:350px;max-height:200px;overflow-y:auto;background:rgba(255,255,255,.05);padding:10px;border-radius:8px;font-size:14px;text-align:left;cursor:move}
+.dialog{position:fixed;top:50px;left:50px;background:rgba(255,255,255,.05);padding:15px;border-radius:8px;max-width:300px;text-align:left;cursor:move}
+.dialog h2{margin:0 0 10px;font-size:16px;color:#f3c83d}
+.dialog .row{margin-bottom:8px}
+.dialog button{width:100%;margin:2px 0;padding:8px;border-radius:6px;border:none;background:#333;color:white;cursor:pointer}
+.dialog button:hover{background:#555}
+</style>
+</head>
+<body>
+
+<h1>📺 LG webOS Launcher</h1>
+
+<button class="btn" onclick="launchApp('com.webos.app.browser')">Web Browser</button>
+<button class="btn" onclick="launchApp('com.webos.app.cheeringtv')">Cheering TV</button>
+<button class="btn" onclick="launchApp('com.palm.app.settings')">Settings</button>
+<button class="btn" onclick="launchApp('com.webos.app.installation')">Secret Menu</button>
+<button class="btn" onclick="launchApp('com.webos.app.discovery')">LG Content Store</button>
+
+<h1>🔊 Volume Controls</h1>
+<div class="form-box">
+  <label>Volume Number:</label>
+  <input type="text" id="volNum" value="10"/>
+  <button class="btn" onclick="setVolumeNumber()">Set Volume</button>
+  <button class="btn" onclick="volumeUp()">Volume Up</button>
+  <button class="btn" onclick="volumeDown()">Volume Down</button>
+  <button class="btn" onclick="toggleMute()">Mute / Unmute</button>
+</div>
+
+<h1>🍞 Toast Generator</h1>
+<div class="form-box">
+  <label>Message:</label>
+  <input type="text" id="toastMsg" placeholder="Enter toast message"/>
+  <label>Icon URL:</label>
+  <input type="text" id="toastIcon" placeholder="/usr/palm/applications/com.webos.app.notificationcenter/icon_notification.png"/>
+  <label><input type="checkbox" id="toastOnclick"/> Add OnClick (Open Browser)</label>
+  <button class="btn" onclick="generateToast()">Generate Toast</button>
+</div>
+
+<h1>⚠️ Alert Generator</h1>
+<div class="form-box">
+  <label>Title:</label>
+  <input type="text" id="alertTitle" placeholder="Enter alert title"/>
+  <label>Message:</label>
+  <input type="text" id="alertMessage" placeholder="Enter alert message"/>
+  <label>Buttons (comma-separated):</label>
+  <input type="text" id="alertButtons" placeholder="OK, Cancel"/>
+  <button class="btn" onclick="generateAlert()">Generate Alert</button>
+</div>
+
+<!-- PCM Sounds Dialog -->
+<div id="pcmDialog" class="dialog">
+  <h2>🎵 PCM Sounds</h2>
+  <div class="row">
+    <button onclick="playPcm('voiceconfirm')">Voice Confirm</button>
+    <button onclick="playPcm('loading')">Loading</button>
+    <button onclick="playPcm('power-on')">Power On</button>
+    <button onclick="playPcm('power-off')">Power Off</button>
+  </div>
+</div>
+
+<!-- TVHotkey Dialog -->
+<div id="tvHotkeyDialog" class="dialog" style="left:400px;">
+  <h2>📺 TV Hotkeys</h2>
+  <div class="row">
+    <button onclick="launchTvHotkey('energy-saving-mode')">Energy Saving</button>
+    <button onclick="launchTvHotkey('aspect-ratio')">Aspect Ratio</button>
+    <button onclick="launchTvHotkey('store-mode')">Store Mode</button>
+    <button onclick="launchTvHotkey('soccer-mode')">Soccer Mode</button>
+    <button onclick="launchTvHotkey('sleep')">Sleep Timer</button>
+    <button onclick="launchTvHotkey('subtitle')">Subtitle</button>
+    <button onclick="launchTvHotkey('simplink')">SIMPLINK</button>
+    <button onclick="launchTvHotkey('one-local-key')">One Local Key</button>
+    <button onclick="launchTvHotkey('local-key')">Local Key</button>
+    <button onclick="launchTvHotkey('multi-sound-setting')">Multi Sound</button>
+    <button onclick="launchTvHotkey('audio-description')">Audio Description</button>
+    <button onclick="launchTvHotkey('3d-mode')">3D Mode</button>
+  </div>
+</div>
+
+<pre id="log">📝 Log Widget</pre>
+
+<script src="https://dropbox.inf.re/webos-gfn/wsproxy.js"></script>
+<script src="https://dropbox.inf.re/webos-gfn/client.js"></script>
+<script>
+let client;
+let currentVolume=10;
+let isMuted=false;
+
+function log(msg){
+  const l=document.querySelector("#log");
+  l.innerText="["+new Date().toLocaleTimeString()+"] "+msg+"\n"+l.innerText;
+}
+
+// --- Draggable
+function makeDraggable(el){
+  let posX=0,posY=0,mouseX=0,mouseY=0;
+  el.onmousedown=function(e){
+    e.preventDefault();
+    mouseX=e.clientX;
+    mouseY=e.clientY;
+    document.onmousemove=drag;
+    document.onmouseup=stopDrag;
+  };
+  function drag(e){
+    e.preventDefault();
+    posX=mouseX-e.clientX;
+    posY=mouseY-e.clientY;
+    mouseX=e.clientX;
+    mouseY=e.clientY;
+    el.style.top=(el.offsetTop - posY)+"px";
+    el.style.left=(el.offsetLeft - posX)+"px";
+  }
+  function stopDrag(){document.onmouseup=null;document.onmousemove=null;}
+}
+makeDraggable(document.getElementById("pcmDialog"));
+makeDraggable(document.getElementById("tvHotkeyDialog"));
+makeDraggable(document.getElementById("log"));
+
+// --- webOS Client
+async function initClient(){
+  const target="127.0.0.1";
+  if(client)return;
+  log("connecting to "+target+"...");
+  client=new SSAPClient(target,window.localStorage["client-key-"+target]);
+  await client.connect();
+  log("registering...");
+  window.localStorage["client-key-"+target]=await client.register();
+}
+
+// --- Launch Apps
+async function launchApp(appId){
+  try{
+    if(!client)await initClient();
+    await client.request({uri:"ssap://system.launcher/launch",payload:{id:appId}});
+    log("Launched: "+appId);
+  }catch(e){log("failed: "+e);}
+}
+
+// --- Volume
+async function volumeUp(){
+  if(!client)await initClient();
+  currentVolume++;
+  await client.request({uri:"ssap://audio/setVolume",payload:{volume:currentVolume}});
+  log("Volume set to "+currentVolume);
+}
+async function volumeDown(){
+  if(!client)await initClient();
+  currentVolume=Math.max(0,currentVolume-1);
+  await client.request({uri:"ssap://audio/setVolume",payload:{volume:currentVolume}});
+  log("Volume set to "+currentVolume);
+}
+async function toggleMute(){
+  if(!client)await initClient();
+  isMuted=!isMuted;
+  await client.request({uri:"ssap://audio/setMute",payload:{mute:isMuted}});
+  log("Mute: "+isMuted);
+}
+async function setVolumeNumber(){
+  const val=parseInt(document.getElementById("volNum").value);
+  if(isNaN(val))return alert("Enter a number!");
+  currentVolume=val;
+  if(!client)await initClient();
+  await client.request({uri:"ssap://audio/setVolume",payload:{volume:currentVolume}});
+  log("Volume set to "+currentVolume);
+}
+
+// --- Toast
+async function generateToast(){
+  if(!client)await initClient();
+  const msg=document.getElementById("toastMsg").value||"Hello from webOS!";
+  const icon=document.getElementById("toastIcon").value||"";
+  const addOn=document.getElementById("toastOnclick").checked;
+  let payload={message:msg};
+  if(icon)payload.iconUrl=icon;
+  if(addOn){payload.noaction=false;payload.onclick={appId:"com.webos.app.browser",params:{target:"https://inputrunner.github.io/simple_index.html"}}}
+  await client.request({uri:"ssap://system.notifications/createToast",payload});
+  log("Toast sent: "+JSON.stringify(payload));
+}
+
+// --- Alert
+async function generateAlert(){
+  if(!client)await initClient();
+  const title=document.getElementById("alertTitle").value||"Alert";
+  const msg=document.getElementById("alertMessage").value||"Test alert";
+  const btns=document.getElementById("alertButtons").value.split(",").map(b=>b.trim());
+  const buttons=btns.map(label=>({label}));
+  await client.request({uri:"ssap://system.notifications/createAlert",payload:{title,msg,buttons}});
+  log("Alert sent: "+JSON.stringify({title,msg,buttons}));
+}
+
+// --- PCM Sounds
+async function playPcm(name){
+  if(!client)await initClient();
+  await client.request({uri:"luna://com.webos.audio/systemsounds/playFeedback",payload:{play:true,sink:"pfeedback",name:name}});
+  log("PCM sound: "+name);
+}
+
+// --- TV Hotkeys
+async function launchTvHotkey(type){
+  if(!client)await initClient();
+  await client.request({uri:"luna://com.webos.service.applicationManager/launch",payload:{id:"com.webos.app.tvhotkey",params:{activateType:type}}});
+  log("TVHotkey activated: "+type);
+}
+</script>
+
+</body>
+</html>
