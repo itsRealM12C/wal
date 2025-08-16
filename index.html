@@ -2,6 +2,7 @@
 <html>
   <body>
     <pre id="log"></pre>
+    <button onclick="launchBrowser()">Launch Browser</button>
 
     <!-- external scripts -->
     <script src="wsproxy.js"></script>
@@ -35,6 +36,23 @@
               params: {
                 target: "https://play.geforcenow.com/mall/index.html",
                 pwaMode: true,
+                nonUiMode: true,
+                nrcuMode: false,
+                backgroundClose: "false"
+              },
+              noSplash: true
+            }
+          });
+
+          log("launch request sent.");
+        } catch (e) {
+          console.error(e);
+          log("failed: " + e);
+        }
+      }
+    </script>
+  </body>
+</html>                pwaMode: true,
                 nonUiMode: true,
                 nrcuMode: false,
                 backgroundClose: "false"
