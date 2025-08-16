@@ -57,11 +57,14 @@
   <body>
     <h1>📺 LG webOS Launcher</h1>
 
-    <button class="btn" onclick="launchApp('com.webos.app.browser')">🌐 Web Browser</button>
-    <button class="btn" onclick="launchApp('com.webos.app.cheeringtv')">🎉 Cheering TV</button>
-    <button class="btn" onclick="launchApp('com.palm.app.settings')">⚙️ Settings</button>
-    <button class="btn" onclick="launchApp('com.webos.app.installation')">🔒 Secret Menu</button>
-    <button class="btn" onclick="launchApp('com.webos.app.premium')">⭐ Premium</button>
+    <button class="btn" onclick="launchApp('com.webos.app.browser')">Web Browser</button>
+    <button class="btn" onclick="launchApp('com.webos.app.cheeringtv')">Cheering TV</button>
+    <button class="btn" onclick="launchApp('com.palm.app.settings')">Settings</button>
+    <button class="btn" onclick="launchApp('com.webos.app.installation')">Secret Menu</button>
+    <button class="btn" onclick="launchApp('com.webos.app.discovery')">LG Content Store</button>
+    <button class="btn" onclick="launchApp('com.webos.app.home')">Home</button>
+    <button class="btn" onclick="launchApp('com.webos.app.fullhome')">New Home</button>
+    
 
     <pre id="log"></pre>
 
@@ -105,46 +108,9 @@
       }
     </script>
   </body>
-</html>                target: "https://play.geforcenow.com/mall/index.html",
-                pwaMode: true,
-                nonUiMode: true,
-                nrcuMode: false,
-                backgroundClose: "false"
-              },
-              noSplash: true
-            }
-          });
-
-          log("launch request sent.");
-        } catch (e) {
-          console.error(e);
-          log("failed: " + e);
-        }
-      }
-    </script>
+</html>                
   </body>
-</html>                pwaMode: true,
-                nonUiMode: true,
-                nrcuMode: false,
-                backgroundClose: "false"
-              },
-              noSplash: true
-            }
-          });
-
-          log("launch request sent.");
-        } catch (e) {
-          console.error(e);
-          log("failed: " + e);
-        }
-      }
-
-      // Trigger when pressing Enter key on remote / keyboard
-      document.addEventListener("keydown", function (e) {
-        if (e.key === "Enter") {
-          launchBrowser();
-        }
-      });
+</html>                
     </script>
   </body>
 </html>
