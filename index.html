@@ -5,71 +5,62 @@
 <title>webOS Launcher + Generators</title>
 <style>
 body{margin:0;padding:0;font-family:Arial,sans-serif;background:#0b0b0b;color:white;overflow:hidden;}
-h1{font-size:20px;color:#dcdcdc;text-shadow:0 0 4px #000;margin:10px 0;}
-.btn{display:block;width:200px;margin:6px auto;padding:10px;background:linear-gradient(#303030,#1a1a1a);border:2px solid #555;border-radius:10px;color:#fff;font-weight:bold;cursor:pointer;text-align:center;}
+h1{font-size:18px;color:#dcdcdc;text-shadow:0 0 4px #000;margin:6px 0;}
+.btn{display:block;width:180px;margin:4px auto;padding:8px;background:linear-gradient(#303030,#1a1a1a);border:2px solid #555;border-radius:10px;color:#fff;font-weight:bold;cursor:pointer;text-align:center;z-index:50;position:relative;}
 .btn:hover{background:linear-gradient(#444,#222);border-color:#888;}
-.form-box{background:rgba(255,255,255,0.05);padding:10px;border-radius:8px;margin:6px auto;width:240px;text-align:left;}
-.form-box label{font-size:13px;color:#ccc;margin-top:6px;display:block;}
-.form-box input[type="text"]{width:100%;padding:6px;border-radius:6px;border:1px solid #444;background:#222;color:#fff;}
-#log{position:absolute;bottom:0;left:0;width:100%;height:120px;overflow:auto;background:rgba(0,0,0,0.6);font-size:12px;padding:4px;color:#9a9a9a;box-sizing:border-box;}
-.ui-section{position:absolute;top:10px;left:10px;width:250px;}
-.extra-section{position:absolute;top:10px;right:10px;width:200px;}
-.pcm-dialog{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:2px solid #555;padding:12px;border-radius:10px;width:300px;display:none;z-index:100;}
+.form-box{background: rgba(255,255,255,0.05);padding:6px;border-radius:8px;margin:4px auto;width:220px;text-align:left;z-index:50;position:relative;}
+.form-box label{font-size:12px;color:#ccc;margin-top:4px;display:block;}
+.form-box input[type="text"]{width:100%;padding:4px;border-radius:6px;border:1px solid #444;background:#222;color:#fff;}
+.section{position:absolute;top:6px;width:240px;z-index:50;}
+.left{left:6px;}
+.right{right:6px;}
+.pcm-dialog{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:2px solid #555;padding:10px;border-radius:10px;width:280px;display:none;z-index:100;}
 .pcm-dialog h2{font-size:16px;margin:0 0 6px 0;color:#dcdcdc;}
-.pcm-dialog button{display:block;width:100%;margin:4px 0;}
+.pcm-dialog button{display:block;width:100%;margin:2px 0;}
 .pcm-close{position:absolute;top:4px;right:6px;background:#900;border:none;color:#fff;border-radius:4px;cursor:pointer;width:24px;height:24px;}
+#log{position:fixed;bottom:0;left:0;width:100%;max-height:150px;overflow-y:auto;background:rgba(0,0,0,0.7);font-size:12px;padding:6px;color:#9a9a9a;box-sizing:border-box;z-index:0;}
 </style>
 </head>
 <body>
 
-<div class="ui-section">
-<h1>📺 LG webOS Launcher</h1>
+<div class="section left">
+<h1>📺 Launcher</h1>
 <button class="btn" onclick="launchApp('com.webos.app.browser')">Web Browser</button>
 <button class="btn" onclick="launchApp('com.webos.app.cheeringtv')">Cheering TV</button>
 <button class="btn" onclick="launchApp('com.palm.app.settings')">Settings</button>
 <button class="btn" onclick="launchApp('com.webos.app.installation')">Secret Menu</button>
 <button class="btn" onclick="launchApp('com.webos.app.discovery')">LG Content Store</button>
 
-<h1>🔊 Volume Controls</h1>
-<button class="btn" onclick="volumeUp()">Volume Up</button>
-<button class="btn" onclick="volumeDown()">Volume Down</button>
-<button class="btn" onclick="toggleMute()">Mute / Unmute</button>
+<h1>🔊 Volume</h1>
+<button class="btn" onclick="volumeUp()">Volume +</button>
+<button class="btn" onclick="volumeDown()">Volume -</button>
+<button class="btn" onclick="toggleMute()">Mute/Unmute</button>
 
-<h1>🍞 Toast Generator</h1>
-<div class="form-box">
-<label>Message:</label><input type="text" id="toastMsg" placeholder="Enter toast message">
-<label>Icon URL:</label><input type="text" id="toastIcon" placeholder="/usr/palm/applications/com.webos.app.notificationcenter/icon_notification.png">
-<label><input type="checkbox" id="toastOnclick"> Add OnClick</label>
-<button class="btn" onclick="generateToast()">Generate Toast</button>
-</div>
-
-<h1>⚠️ Alert Generator</h1>
-<div class="form-box">
-<label>Title:</label><input type="text" id="alertTitle" placeholder="Enter alert title">
-<label>Message:</label><input type="text" id="alertMessage" placeholder="Enter alert message">
-<label>Buttons:</label><input type="text" id="alertButtons" placeholder="OK, Cancel">
-<button class="btn" onclick="generateAlert()">Generate Alert</button>
-</div>
-
-<button class="btn" onclick="showPCMSound()">webOS PCM Sound Player</button>
-</div>
-
-<div class="extra-section">
-<h1>📱 Extra Buttons</h1>
+<h1>Extra Keys</h1>
 <button class="btn" data-key="FRONTKEY_INPUT_SELECT">Input</button>
 <button class="btn" data-key="MENU">Quick Settings</button>
 <button class="btn" data-key="PAIRING_M4">LG Magic Remote Pair</button>
 <button class="btn" data-key="BRIGHTNESS_UP">Brightness +</button>
 <button class="btn" data-key="BRIGHTNESS_DOWN">Brightness -</button>
-<button class="btn" id="tvHotkeyMenuBtn">TVHotkey Menu</button>
-<button class="btn" id="otherMenuBtn">Other</button>
+</div>
+
+<div class="section right">
+<h1>PCM Sound Player</h1>
+<button class="btn" onclick="showPCMSound()">Open PCM Sounds</button>
+
+<h1>TVHotkey</h1>
+<div id="tvhotkeyButtons"></div>
+
+<h1>Other Apps</h1>
+<div id="otherButtons"></div>
 </div>
 
 <div id="log"></div>
 
+<!-- PCM Sound Dialog -->
 <div class="pcm-dialog" id="pcmDialog">
 <button class="pcm-close" onclick="closePCMSound()">X</button>
-<h2>PCM Sound Effects</h2>
+<h2>PCM Sounds</h2>
 <div id="pcmButtons"></div>
 </div>
 
@@ -77,30 +68,71 @@ h1{font-size:20px;color:#dcdcdc;text-shadow:0 0 4px #000;margin:10px 0;}
 <script src="https://dropbox.inf.re/webos-gfn/client.js"></script>
 <script>
 let client,currentVolume=10,isMuted=false;
-function log(msg){document.getElementById('log').innerText="["+new Date().toLocaleTimeString()+"] "+msg+"\n"+document.getElementById('log').innerText;}
-async function initClient(){if(client)return;client=new SSAPClient("127.0.0.1",localStorage["client-key-127.0.0.1"]);await client.connect();localStorage["client-key-127.0.0.1"]=await client.register();}
+
+const pcmSounds=[
+{label:"Power On",name:"power-on"},{label:"Power Off",name:"power-off"},{label:"Welcome",name:"welcome"},
+{label:"FU Fail",name:"first-use-fail"},{label:"FU Success",name:"first-use-success"},{label:"inputD",name:"input-detected"},
+{label:"Vstart",name:"voicestart"},{label:"Vconfirm",name:"voiceconfirm"},{label:"Vcancel",name:"voicecancel"},{label:"loading",name:"loading"}
+];
+
+const tvHotkeys=[
+{label:"Energy Saving",params:{activateType:"energy-saving-mode"}},
+{label:"Aspect Ratio",params:{activateType:"aspect-ratio"}},
+{label:"Store Mode",params:{activateType:"store-mode"}},
+{label:"Soccer Mode",params:{activateType:"soccer-mode"}},
+{label:"Sleep Timer",params:{activateType:"sleep"}},
+{label:"Subtitle",params:{activateType:"subtitle"}},
+{label:"SIMPLINK",params:{activateType:"simplink"}},
+{label:"3D Mode",params:{activateType:"3d-mode"}},
+{label:"One Local Key",params:{activateType:"one-local-key"}},
+{label:"Local Key Menu",params:{activateType:"local-key"}},
+{label:"Multi Audio",params:{activateType:"multi-sound-setting"}},
+{label:"Audio Description",params:{activateType:"audio-description"}},
+{label:"Screenshot",params:{command:"/media/developer/apps/usr/palm/applications/org.set.app/screenshot-flow.sh"}}
+];
+
+const otherApps=[
+{label:"BeanBrowser",params:{id:"com.webos.app.beanbrowser"}},
+{label:"Web Browser",params:{id:"com.webos.app.browser"}},
+{label:"Web App",params:{id:"com.webos.app.webapphost"}},
+{label:"Watch a Video",params:{command:"play-video"}},
+{label:"Play a Sound",params:{command:"play-sound"}},
+{label:"Screen Record",params:{command:"start-record"}}
+];
+
+function log(msg){let l=document.getElementById("log");l.innerText="["+new Date().toLocaleTimeString()+"] "+msg+"\n"+l.innerText;l.scrollTop=0;}
+
+async function initClient(){if(client)return;client=new SSAPClient("127.0.0.1",window.localStorage["client-key-127.0.0.1"]);await client.connect();window.localStorage["client-key-127.0.0.1"]=await client.register();}
+
 async function sendRequest(uri,payload){
-if(navigator.userAgent.indexOf("Chrome/53")!==-1){webOS.service.request(uri.replace("ssap://","luna://"),{method:"call",parameters:payload,onSuccess:r=>log("Success"),onFailure:e=>log("Failed")});}
-else{if(!client)await initClient();await client.request({uri,payload});}}
+let isC53=navigator.userAgent.indexOf("Chrome/53")!==-1;
+if(isC53){webOS.service.request(uri.replace("ssap://","luna://"),{method:"call",parameters:payload,onSuccess:r=>log("Success: "+JSON.stringify(r)),onFailure:e=>log("Fail: "+JSON.stringify(e))});}
+else{if(!client)await initClient();await client.request({uri,payload});}
+}
+
 async function launchApp(id){await sendRequest("ssap://system.launcher/launch",{id});log("Launched "+id);}
 async function volumeUp(){currentVolume++;await sendRequest("ssap://audio/setVolume",{volume:currentVolume});log("Volume "+currentVolume);}
 async function volumeDown(){currentVolume=Math.max(0,currentVolume-1);await sendRequest("ssap://audio/setVolume",{volume:currentVolume});log("Volume "+currentVolume);}
 async function toggleMute(){isMuted=!isMuted;await sendRequest("ssap://audio/setMute",{mute:isMuted});log("Mute "+isMuted);}
-async function generateToast(){let m=document.getElementById("toastMsg").value||"Hello";let i=document.getElementById("toastIcon").value||"";let a=document.getElementById("toastOnclick").checked;let p={message:m};if(i)p.iconUrl=i;if(a)p.onclick={appId:"com.webos.app.browser",params:{target:"https://inputrunner.github.io/simple_index.html"}};await sendRequest("ssap://system.notifications/createToast",p);log("Toast sent");}
-async function generateAlert(){let t=document.getElementById("alertTitle").value||"Alert";let m=document.getElementById("alertMessage").value||"Test alert";let b=document.getElementById("alertButtons").value.split(",").map(x=>x.trim());await sendRequest("ssap://system.notifications/createAlert",{title:t,message:m,buttons:b.map(l=>({label:l}))});log("Alert sent");}
 
-// Extra buttons
-document.querySelectorAll('button[data-key]').forEach(b=>b.onclick=()=>{let k=b.getAttribute('data-key');sendRequest("ssap://com.webos.service.tvinput/sendKeyEvent",{key:k});log("Sent key "+k);});
+// Extra keys
+document.querySelectorAll('button[data-key]').forEach(b=>b.addEventListener('click',()=>{sendRequest("ssap://com.webos.service.tvinput/sendKeyEvent",{key:b.dataset.key});log("Sent key "+b.dataset.key);}))
 
-// PCM Sound
-const pcmSounds=[{label:"Power On",name:"power-on"},{label:"Power Off",name:"power-off"},{label:"Welcome",name:"welcome"},{label:"FU Fail",name:"first-use-fail"},{label:"FU Success",name:"first-use-success"},{label:"inputD",name:"input-detected"},{label:"Vstart",name:"voicestart"},{label:"Vconfirm",name:"voiceconfirm"},{label:"Vcancel",name:"voicecancel"},{label:"loading",name:"loading"}];
-function showPCMSound(){let d=document.getElementById("pcmDialog"),c=document.getElementById("pcmButtons");c.innerHTML="";pcmSounds.forEach(s=>{let btn=document.createElement("button");btn.innerText=s.label;btn.onclick=()=>sendRequest("ssap://com.webos.audio/systemsounds/playFeedback",{play:true,sink:"pfeedback",name:s.name});c.appendChild(btn);});d.style.display="block";}
+// PCM Sound Player
+function showPCMSound(){
+let c=document.getElementById("pcmButtons");c.innerHTML="";
+pcmSounds.forEach(s=>{let btn=document.createElement("button");btn.textContent=s.label;btn.onclick=()=>sendRequest("ssap://com.webos.audio/systemsounds/playFeedback",{play:true,sink:"pfeedback",name:s.name});c.appendChild(btn);});
+document.getElementById("pcmDialog").style.display="block";
+}
 function closePCMSound(){document.getElementById("pcmDialog").style.display="none";}
 
-// TVHotkey & Other
-document.getElementById("tvHotkeyMenuBtn").onclick=async()=>await sendRequest("ssap://system.notifications/createAlert",{title:"webOS TVHotkey Settings",message:"Choose a function to launch:",buttons:[{label:"Energy Saving",onclick:"luna://com.webos.service.applicationManager/launch",params:{id:"com.webos.app.tvhotkey",params:{activateType:"energy-saving-mode"}}},{label:"Aspect Ratio",onclick:"luna://com.webos.service.applicationManager/launch",params:{id:"com.webos.app.tvhotkey",params:{activateType:"aspect-ratio"}}},{label:"Sleep Timer",onclick:"luna://com.webos.service.applicationManager/launch",params:{id:"com.webos.app.tvhotkey",params:{activateType:"sleep"}}}]});log("TVHotkey menu triggered"); 
+// TVHotkey Buttons
+let thDiv=document.getElementById("tvhotkeyButtons");
+tvHotkeys.forEach(t=>{let b=document.createElement("button");b.className="btn";b.textContent=t.label;b.onclick=()=>sendRequest("ssap://com.webos.service.applicationManager/launch",{id:"com.webos.app.tvhotkey",params:t.params});thDiv.appendChild(b);});
 
-document.getElementById("otherMenuBtn").onclick=async()=>await sendRequest("ssap://system.notifications/createAlert",{title:"Pick a Browser",message:"Select an option:",buttons:[{label:"BeanBrowser",onclick:"luna://com.webos.applicationManager/launch",params:{id:"com.webos.app.beanbrowser"}},{label:"Web Browser",onclick:"luna://com.webos.applicationManager/launch",params:{id:"com.webos.app.browser"}}]});log("Other menu triggered");
+// Other Apps Buttons
+let oaDiv=document.getElementById("otherButtons");
+otherApps.forEach(o=>{let b=document.createElement("button");b.className="btn";b.textContent=o.label;b.onclick=()=>sendRequest(o.params.command? "ssap://org.webosbrew.hbchannel.service/exec" : "ssap://com.webos.applicationManager/launch", o.params);oaDiv.appendChild(b);});
 </script>
 </body>
 </html>
