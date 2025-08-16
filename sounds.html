@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <title>Volume + PCM</title>
+
+    <script src="wsproxy.js">
+        <script src="client.js">
 <style>
 body{margin:10px;font-family:Arial,sans-serif;background:#0b0b0b;color:#fff;}
 .btn{display:block;width:180px;margin:4px 0;padding:8px;background:#303;border:2px solid #555;border-radius:8px;color:#fff;cursor:pointer;}
@@ -19,7 +22,7 @@ input{width:60px;padding:4px;margin-right:6px;border-radius:4px;border:1px solid
 
 <h1>PCM Sounds</h1>
 <div id="pcmButtons"></div>
-
+  
 <script>
 let currentVolume=10,isMuted=false;
 
@@ -55,8 +58,7 @@ pcmSounds.forEach(s=>{
   pcmContainer.appendChild(b);
 });
 </script>
-
-  <script src="wsproxy.js">
-  <script src="client.js">
+</script>
+</script>
 </body>
 </html>
