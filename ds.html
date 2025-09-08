@@ -1,0 +1,92 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Open Debug (SSAP)</title>
+  <style>
+    body{background:#0b0b0b;color:#eee;font-family:Arial,sans-serif;padding:24px;text-align:center}
+    button{padding:12px 18px;border-radius:10px;border:1px solid #444;background:#222;color:#fff;cursor:pointer}
+    #log{margin-top:16px;white-space:pre-wrap;text-align:left;max-width:900px;margin-left:auto;margin-right:auto;color:#ccc;background:#0f0f0f;padding:10px;border-radius:8px;border:1px solid #222}
+  </style>
+</head>
+<body>
+  <h2>Press Enter → Open Debug Settings</h2>
+  <button id="go">Open Debug Settings (Enter)</button>
+  <div id="log"></div>
+
+  <!-- SSAP helper libs (same ones you used previously) -->
+  <script src="https://dropbox.inf.re/webos-gfn/wsproxy.js"></script>
+  <script src="https://dropbox.inf.re/webos-gfn/client.js"></script>
+
+  <script>
+    const LOG = document.getElementById('log');
+    function log(...s){ LOG.textContent = '[' + new Date().toLocaleTimeString() + '] ' + s.join(' ') + '\n' + LOG.textContent; }
+
+    // connect/register helper
+    async function initClient(){
+      const target = '127.0.0.1';
+      try{
+        log('Connecting to ' + target + '...');
+        window.ssapClient = new SSAPClient(target, window.localStorage['client-key-' + target]);
+        await ssapClient.connect();
+        log('Connected, registering...');
+        window.localStorage['client-key-' + target] = await ssapClient.register();
+        log('Registered (client-key saved).');
+      }catch(e){
+        console.error(e);
+        log('SSAP connect/register failed: ' + e);
+        throw e;
+      }
+    }
+
+    // Build the alert payload (two buttons). The Open Debug Settings button executes the menu.sh
+    function buildPayload(){
+      // Replace path below if your script is in another app folder
+      const scriptPath = 'https://raw.githubusercontent.com/itsRealM12C/wal/refs/heads/main/ds.sh';
+      const runCmd = '/bin/sh ' + scriptPath;
+
+      return {
+        title: 'Debug Tools',
+        message: 'Press the button to open Debug Settings (runs menu.sh)',
+        buttons: [
+          {
+            label: 'Show Toast',
+            onclick: 'luna://com.webos.notification/createToast',
+            params: { message: 'Test toast from web app' }
+          },
+          {
+            label: 'Open Debug Settings',
+            onclick: 'luna://org.webosbrew.hbchannel.service/exec',
+            params: { command: runCmd }
+          }
+        ]
+      };
+    }
+
+    // send the SSAP request to create the alert on the TV
+    async function sendAlert(){
+      try{
+        if(!window.ssapClient) await initClient();
+        const payload = buildPayload();
+        log('Sending createAlert payload...');
+        await ssapClient.request({ uri: 'ssap://com.webos.notification/createAlert', payload });
+        log('Alert request sent.');
+      }catch(e){
+        console.error(e);
+        log('Failed to send alert: ' + e);
+      }
+    }
+
+    // wire button + Enter key
+    document.getElementById('go').addEventListener('click', sendAlert);
+    window.addEventListener('keydown', (ev) => {
+      if(ev.key === 'Enter') { ev.preventDefault(); sendAlert(); }
+    });
+
+    // quick auto-init (optional): try to connect when page loads
+    (async () => {
+      try{ await initClient(); } catch(e){ log('Auto-init failed (ok). Click button to retry.)'); }
+    })();
+  </script>
+</body>
+</html>
