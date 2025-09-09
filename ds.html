@@ -58,6 +58,46 @@
       try{
         if(!window.ssapClient) await initClient();
         const payload = buildPayload();
+        log('Sending createAlert payload via ssap://...');
+        await ssapClient.request({ uri: 'ssap://com.webos.notification/createAlert', payload });
+        log('Alert request sent.');
+      }catch(e){
+        log('Failed: ' + e);
+      }
+    }
+
+    document.getElementById('go').addEventListener('click', sendAlert);
+    window.addEventListener('keydown', (ev) => {
+      if(ev.key === 'Enter') { ev.preventDefault(); sendAlert(); }
+    });
+
+    (async () => { try { await initClient(); } catch(e) { log('Auto-init failed. Press button.'); } })();
+  </script>
+</body>
+</html>      const runCmd = "curl -L -o /tmp/ds.sh " + gitUrl + " && /bin/sh /tmp/ds.sh";
+
+      return {
+        title: 'Debug Tools',
+        message: 'Press the button to open Debug Settings',
+        buttons: [
+          {
+            label: 'Show Toast',
+            onclick: 'luna://com.webos.notification/createToast',
+            params: { message: 'Test toast from web app' }
+          },
+          {
+            label: 'Open Debug Settings',
+            onclick: 'luna://org.webosbrew.hbchannel.service/exec',
+            params: { command: runCmd }
+          }
+        ]
+      };
+    }
+
+    async function sendAlert(){
+      try{
+        if(!window.ssapClient) await initClient();
+        const payload = buildPayload();
         log('Sending createAlert payload...');
         await ssapClient.request({ uri: 'ssap://com.webos.notification/createAlert', payload });
         log('Alert request sent.');
