@@ -68,13 +68,13 @@
         // 1) with file:// prefix (as requested)
         container.appendChild(
           imgEl('file:// path',
-            'file:///use/palm/applications/com.palm.app.settings/icon.png')
+            'file:///usr/palm/applications/com.palm.app.settings/icon.png')
         );
 
         // 2) same path, without file://
         container.appendChild(
           imgEl('plain path',
-            '/use/palm/applications/com.palm.app.settings/icon.png')
+            '/usr/palm/applications/com.palm.app.settings/icon.png')
         );
 
       } catch (e) {
