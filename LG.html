@@ -1,9 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>LG TV Apps</title>
-  <meta name="viewport" charset="UTF-8" content="width=device-width, initial-scale=1, user-scalable=yes, minimum-scale=1.0">
-  <style>
+<style>
 body {
   font-family: Arial, sans-serif;
   padding: 20px;
@@ -16,25 +14,132 @@ button {
   background: #8e44ad;
   color: white;
   border: none;
+  border-radius: 5px;
   cursor: pointer;
   margin-bottom: 20px;
 }
 
+button:hover {
+  background: #9b59b6;
+}
+
+#apps-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
 .app-card {
-  float: left;
-  width: 150px;
   background: white;
+  border-radius: 10px;
   padding: 15px;
   text-align: center;
-  margin: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  transition: transform 0.2s;
+}
+
+.app-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 
 .app-icon {
   width: 80px;
   height: 80px;
-  display: block;
-  margin: 0 auto 10px;
+  object-fit: contain;
+  margin-bottom: 10px;
+  border-radius: 10px;
 }
+
+.app-title {
+  font-size: 14px;
+  font-weight: bold;
+  color: #333;
+  word-wrap: break-word;
+}
+
+.error {
+  color: red;
+  padding: 15px;
+  background: #ffe6e6;
+  border-radius: 5px;
+  margin-top: 20px;
+}
+
+.loading {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+}
+</style>
+</head>
+<body>
+<button onclick="fetchApps()">Fetch Apps</button>
+<div id="out"></div>
+
+<script>
+function fetchApps() {
+  var out = document.getElementById("out");
+  out.innerHTML = '<div class="loading">Loading apps...</div>';
+  
+  var request = webOS.service.request(
+    "luna://com.webos.applicationManager",
+    {
+      method: "listApps",
+      parameters: {},
+      onSuccess: function (res) {
+        displayApps(res.apps);
+      },
+      onFailure: function (err) {
+        out.innerHTML = '<div class="error">Error: ' + JSON.stringify(err) + '</div>';
+      }
+    }
+  );
+}
+
+function displayApps(apps) {
+  var out = document.getElementById("out");
+  
+  if (!apps || apps.length === 0) {
+    out.innerHTML = '<div class="error">No apps found</div>';
+    return;
+  }
+  
+  var container = document.createElement('div');
+  container.id = 'apps-container';
+  
+  apps.forEach(function(app) {
+    var card = document.createElement('div');
+    card.className = 'app-card';
+    
+    // Create icon element
+    var icon = document.createElement('img');
+    icon.className = 'app-icon';
+    icon.src = app.icon || app.largeIcon || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%23ddd" width="100" height="100"/><text x="50" y="55" font-size="40" text-anchor="middle" fill="%23999">App</text></svg>';
+    icon.onerror = function() {
+      this.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%23ddd" width="100" height="100"/><text x="50" y="55" font-size="40" text-anchor="middle" fill="%23999">?</text></svg>';
+    };
+    
+    // Create title element
+    var title = document.createElement('div');
+    title.className = 'app-title';
+    title.textContent = app.title || app.id || 'Unknown App';
+    
+    card.appendChild(icon);
+    card.appendChild(title);
+    container.appendChild(card);
+  });
+  
+  out.innerHTML = '';
+  out.appendChild(container);
+}
+</script>
+<script src="https://raw.githubusercontent.com/itsRealM12C/cmt/refs/heads/main/webOSTV.js"></script>
+<script src="https://raw.githubusercontent.com/itsRealM12C/cmt/refs/heads/main/webOSTV-dev.js"></script>
+  
+</body>
+</html>}
 
 .app-title {
   font-size: 14px;
