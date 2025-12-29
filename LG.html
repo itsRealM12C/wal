@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-<style>
+  <title>LG TV Apps</title>
+  <meta name="viewport" charset="UTF-8" content="width=device-width, initial-scale=1, user-scalable=yes, minimum-scale=1.0">
+  <style>
 body {
   font-family: Arial, sans-serif;
   padding: 20px;
@@ -14,153 +16,80 @@ button {
   background: #8e44ad;
   color: white;
   border: none;
-  border-radius: 5px;
   cursor: pointer;
   margin-bottom: 20px;
-}
-
-button:hover {
-  background: #9b59b6;
-}
-
-#apps-container {
-  display: block;
-  margin-top: 20px;
-}
-
-#apps-container:after {
-  content: "";
-  display: table;
-  clear: both;
 }
 
 .app-card {
   float: left;
   width: 150px;
   background: white;
-  border-radius: 10px;
   padding: 15px;
   text-align: center;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   margin: 10px;
-  box-sizing: border-box;
 }
 
 .app-icon {
   width: 80px;
   height: 80px;
-  margin: 0 auto 10px;
   display: block;
-  border-radius: 10px;
+  margin: 0 auto 10px;
 }
 
 .app-title {
   font-size: 14px;
   font-weight: bold;
   color: #333;
-  word-wrap: break-word;
 }
-
-.error {
-  color: red;
-  padding: 15px;
-  background: #ffe6e6;
-  border-radius: 5px;
-  margin-top: 20px;
-}
-
-.loading {
-  text-align: center;
-  padding: 20px;
-  color: #666;
-}
-</style>
+  </style>
 </head>
 <body>
-<button onclick="fetchApps()">Fetch Apps</button>
-<div id="out"></div>
-
-<script src="https://raw.githubusercontent.com/itsRealM12C/cmt/refs/heads/main/webOSTV.js"></script>
-<script src="https://raw.githubusercontent.com/itsRealM12C/cmt/refs/heads/main/webOSTV-dev.js"></script>
-
-<script>
-function fetchApps() {
-  var out = document.getElementById("out");
-  out.innerHTML = '<div class="loading">Loading apps...</div>';
+  <script src="webOSTV.js" charset="utf-8"></script>
+  <script src="webOSTV-dev.js" charset="utf-8"></script>
   
-  // Add a timeout to check if webOS is available
-  setTimeout(function() {
-    if (typeof webOS === 'undefined') {
-      out.innerHTML = '<div class="error">Error: webOS library not loaded. Make sure you are running this on an LG TV.</div>';
-      return;
-    }
+  <button onclick="fetchApps()">Fetch Apps</button>
+  <div id="out"></div>
+  
+  <script>
+  function fetchApps() {
+    document.getElementById("out").innerHTML = "Loading...";
     
-    try {
-      var request = webOS.service.request(
-        "luna://com.webos.applicationManager",
-        {
-          method: "listApps",
-          parameters: {},
-          onSuccess: function (res) {
-            displayApps(res.apps);
-          },
-          onFailure: function (err) {
-            out.innerHTML = '<div class="error">Error: ' + JSON.stringify(err) + '</div>';
-          }
+    var request = webOS.service.request("luna://com.webos.applicationManager", {
+      method: "listApps",
+      parameters: {},
+      onSuccess: function (inResponse) {
+        console.log("Apps loaded successfully");
+        var out = document.getElementById("out");
+        out.innerHTML = "";
+        
+        var apps = inResponse.apps;
+        for (var i = 0; i < apps.length; i++) {
+          var app = apps[i];
+          
+          var card = document.createElement("div");
+          card.className = "app-card";
+          
+          var icon = document.createElement("img");
+          icon.className = "app-icon";
+          icon.src = app.icon || app.largeIcon;
+          
+          var title = document.createElement("div");
+          title.className = "app-title";
+          title.innerHTML = app.title || app.id;
+          
+          card.appendChild(icon);
+          card.appendChild(title);
+          out.appendChild(card);
         }
-      );
-    } catch (e) {
-      out.innerHTML = '<div class="error">Error calling service: ' + e.message + '</div>';
-    }
-  }, 500);
-}
-
-function displayApps(apps) {
-  var out = document.getElementById("out");
-  
-  if (!apps || apps.length === 0) {
-    out.innerHTML = '<div class="error">No apps found</div>';
-    return;
+      },
+      onFailure: function (inError) {
+        console.log("Failed to load apps");
+        console.log("[" + inError.errorCode + "]: " + inError.errorText);
+        document.getElementById("out").innerHTML = "Error: [" + inError.errorCode + "]: " + inError.errorText;
+        return;
+      }
+    });
   }
-  
-  var container = document.createElement('div');
-  container.id = 'apps-container';
-  
-  for (var i = 0; i < apps.length; i++) {
-    var app = apps[i];
-    
-    var card = document.createElement('div');
-    card.className = 'app-card';
-    
-    // Create icon element
-    var icon = document.createElement('img');
-    icon.className = 'app-icon';
-    
-    var iconUrl = app.icon || app.largeIcon || '';
-    if (iconUrl) {
-      icon.src = iconUrl;
-    } else {
-      icon.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%23ddd" width="100" height="100"/%3E%3Ctext x="50" y="55" font-size="40" text-anchor="middle" fill="%23999"%3EApp%3C/text%3E%3C/svg%3E';
-    }
-    
-    icon.onerror = function() {
-      this.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%23ddd" width="100" height="100"/%3E%3Ctext x="50" y="55" font-size="40" text-anchor="middle" fill="%23999"%3E%3F%3C/text%3E%3C/svg%3E';
-    };
-    
-    // Create title element
-    var title = document.createElement('div');
-    title.className = 'app-title';
-    title.textContent = app.title || app.id || 'Unknown App';
-    
-    card.appendChild(icon);
-    card.appendChild(title);
-    container.appendChild(card);
-  }
-  
-  out.innerHTML = '';
-  out.appendChild(container);
-}
-</script>
-  
+  </script>
 </body>
 </html>
