@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<body>
+<button onclick="fetchApps()">Fetch Apps</button>
+<pre id="out"></pre>
+
+<script>
+function fetchApps() {
+  var request = new webOS.service.request(
+    "luna://com.webos.applicationManager",
+    {
+      method: "listApps",
+      parameters: {},
+      onSuccess: function (res) {
+        document.getElementById("out").textContent =
+          JSON.stringify(res.apps, null, 2);
+      },
+      onFailure: function (err) {
+        document.getElementById("out").textContent =
+          "Error: " + JSON.stringify(err);
+      }
+    }
+  );
+}
+</script>
+</body>
+</html>
