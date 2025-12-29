@@ -6,7 +6,7 @@
 
 <script>
 function fetchApps() {
-  var request = new webOS.service.request(
+  var request = webOS.service.request(
     "luna://com.webos.applicationManager",
     {
       method: "listApps",
@@ -23,5 +23,8 @@ function fetchApps() {
   );
 }
 </script>
+<script src="https://raw.githubusercontent.com/itsRealM12C/cmt/refs/heads/main/webOSTV.js"></script>
+<script src="https://raw.githubusercontent.com/itsRealM12C/cmt/refs/heads/main/webOSTV-dev.js"></script>
+  
 </body>
 </html>
